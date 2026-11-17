@@ -13,7 +13,7 @@
     /* ---- Scène : capsule flottante sur l'aperçu ---- */
     const bar = pvWrap.querySelector(".pvBar");
     bar.classList.add("hud"); pvBox.appendChild(bar);
-    if (document.body.classList.contains("ppt")) bar.querySelectorAll(".btn").forEach(b => { if (/Varier/.test(b.textContent)) { b.title = "Varier"; b.textContent = "⟳"; } });
+    if (document.body.classList.contains("ppt") || window.innerWidth <= 520) bar.querySelectorAll(".btn").forEach(b => { if (/Varier/.test(b.textContent)) { b.title = "Varier"; b.textContent = "⟳"; } });
     // statut : petit message flottant (HUD) en haut de la scène
     const st = $("status"); pvBox.appendChild(st);
     // status() réécrit className : l'affichage passe par data-show (non observé, donc pas de boucle)
@@ -116,7 +116,12 @@
 
     // le style choisi reste visible dans la bande
     const origGrid = window.renderTemplateGrid;
-    const reveal = () => { const on = grid.querySelector(".tpl.on"); if (on) on.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); };
+    // défile seulement la bande (scrollIntoView ferait aussi défiler une page parente, ex. la landing)
+    const reveal = () => {
+      const on = grid.querySelector(".tpl.on"); if (!on) return;
+      const l = on.offsetLeft - grid.offsetLeft, r = l + on.offsetWidth;
+      if (l < grid.scrollLeft || r > grid.scrollLeft + grid.clientWidth) grid.scrollTo({ left: Math.max(0, l - 12), behavior: "smooth" });
+    };
     window.renderTemplateGrid = function () { const r = origGrid.apply(this, arguments); requestAnimationFrame(reveal); return r; };
     setTimeout(reveal, 300);
 

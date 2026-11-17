@@ -1195,7 +1195,7 @@ const FontPicker = (() => {
   }
   function mark(scroll) {
     rows.forEach((r, i) => r.classList.toggle("act", i === active));
-    if (scroll && rows[active]) rows[active].scrollIntoView({ block: "nearest" });
+    if (scroll && rows[active]) { const L = $("fp-list"), r = rows[active]; if (r.offsetTop < L.scrollTop + 30) L.scrollTop = r.offsetTop - 30; else if (r.offsetTop + r.offsetHeight > L.scrollTop + L.clientHeight) L.scrollTop = r.offsetTop + r.offsetHeight - L.clientHeight; }
   }
   function move(d) { if (!rows.length) return; active = Math.max(0, Math.min(rows.length - 1, (active < 0 ? -1 : active) + d)); mark(true); }
   function place() {
@@ -1215,7 +1215,7 @@ const FontPicker = (() => {
     anchor = a; q = ""; $("fp-q").value = ""; $("fp-sys").value = GF.has(S.text.family) ? "" : S.text.family;
     render(); place();
     pop.classList.add("open"); anchor.classList.add("open");
-    requestAnimationFrame(() => { $("fp-q").focus({ preventScroll: true }); if (rows[active]) rows[active].scrollIntoView({ block: "center" }); });
+    requestAnimationFrame(() => { $("fp-q").focus({ preventScroll: true }); if (rows[active]) { const L = $("fp-list"); L.scrollTop = rows[active].offsetTop - L.clientHeight / 2; } });
   }
   function close() { if (!pop) return; pop.classList.remove("open"); if (anchor) anchor.classList.remove("open"); }
   function toggle(a) { if (pop && pop.classList.contains("open")) close(); else open(a); }
