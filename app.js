@@ -1272,9 +1272,11 @@ async function importFonts() {
 /* ======================================================================= */
 /*  APERÇU (canvas) et RENDU COMPLET                                        */
 /* ======================================================================= */
+const PV_SIZES = { S: 140, M: 200, L: 290, XL: 400 };
 function applyPvSize() {
   const box = $("pvBox"); if (!box) return;
-  if (!HOST.fillPreview) box.style.height = (PV_HEIGHTS[S.pvSize] || 240) + "px";
+  if (!HOST.fillPreview) box.style.height = (PV_SIZES[S.pvSize] || 200) + "px"; else box.style.height = "";
+  clearTimeout(applyPvSize._t); applyPvSize._t = setTimeout(() => scheduleRender(true), 380);
   updatePvBar();
 }
 async function renderPreview(hq) {
@@ -1297,21 +1299,27 @@ async function renderPreview(hq) {
   else if (S.pvBg === "light") bg = { color: [0.95, 0.95, 0.94] };
   else bg = { rgb: E.renderBackground(r.w, r.h, P, { pxScale: r.pxScale, ax: r.ax, ay: r.ay, texBg }) };
   const rgb = E.toRGB8(r.img, r.w, r.h, bg);
-  const sc = Math.min(bw / r.w, bh / r.h);
+  // cadrage serré sur le contenu (les marges réservées aux effets ne prennent plus de place)
+  const bb = ((r.meta && r.meta.prog && r.meta.prog.active) || bg.rgb) ? { x: 0, y: 0, w: r.w, h: r.h }
+    : alphaBounds(r.img.a, r.w, r.h, Math.round(Math.min(r.w, r.h) * 0.03));
+  const sc = Math.min((bw - 16) / bb.w, (bh - 16) / bb.h);
   if (!S.compare) drawHandles(rgb, r.w, r.h, r.meta, sc);
   const cv = $("pvImg");
-  cv.width = r.w; cv.height = r.h;
-  const x = cv.getContext("2d"), id = x.createImageData(r.w, r.h), d = id.data;
-  for (let i = 0, j = 0; i < r.w * r.h; i++, j += 3) { d[i * 4] = rgb[j]; d[i * 4 + 1] = rgb[j + 1]; d[i * 4 + 2] = rgb[j + 2]; d[i * 4 + 3] = 255; }
+  cv.width = bb.w; cv.height = bb.h;
+  const x = cv.getContext("2d"), id = x.createImageData(bb.w, bb.h), d = id.data;
+  for (let yy = 0; yy < bb.h; yy++) for (let xx = 0; xx < bb.w; xx++) {
+    const j = ((yy + bb.y) * r.w + xx + bb.x) * 3, i = (yy * bb.w + xx) * 4;
+    d[i] = rgb[j]; d[i + 1] = rgb[j + 1]; d[i + 2] = rgb[j + 2]; d[i + 3] = 255;
+  }
   x.putImageData(id, 0, 0);
-  cv.style.width = Math.max(1, Math.round(r.w * sc)) + "px";
-  cv.style.height = Math.max(1, Math.round(r.h * sc)) + "px";
+  cv.style.width = Math.max(1, Math.round(bb.w * sc)) + "px";
+  cv.style.height = Math.max(1, Math.round(bb.h * sc)) + "px";
   cv.style.display = "block";
   const c = bg.color || E.hexToRgb(P.bg);
   box.style.backgroundColor = bg.checker ? "#1d1d20" : "rgb(" + c.map(v => Math.round(v * 255)).join(",") + ")";
-  S.lastPv = { w: r.w, h: r.h, sc, meta: r.meta };
+  S.lastPv = { w: r.w, h: r.h, sc, meta: r.meta, crop: bb };
   $("pvHint").style.display = r.meta && r.meta.prog && r.meta.prog.active && !S.compare ? "block" : "none";
-  $("pvMs").textContent = (hq ? "HD · " : "") + r.w + "×" + r.h + " · " + (Date.now() - t0) + " ms";
+  $("pvMs").textContent = (hq ? "HD · " : "") + bb.w + "×" + bb.h + " · " + (Date.now() - t0) + " ms";
 }
 function setSource(src) {
   S.src = src; S.cache.clear(); S.maskCache.clear();
@@ -1366,7 +1374,20 @@ async function renderFull(mul, opts) {
     }
   }
   x.putImageData(id, 0, 0);
-  return { canvas: out, w, h, scaled: f, center: { x: pad + m.w / 2, y: pad + m.h / 2 }, textW: m.w, textH: m.h };
+  // pas de marge vide : on recadre au plus près de ce qui est visible
+  const bb = alphaBounds(img.a, w, h, Math.max(2, Math.round(unit * 0.02)));
+  if (opts.trim === false || (bb.w === w && bb.h === h)) return { canvas: out, w, h, scaled: f, center: { x: pad + m.w / 2, y: pad + m.h / 2 }, textW: m.w, textH: m.h };
+  const crop = document.createElement("canvas"); crop.width = bb.w; crop.height = bb.h;
+  crop.getContext("2d").drawImage(out, bb.x, bb.y, bb.w, bb.h, 0, 0, bb.w, bb.h);
+  return { canvas: crop, w: bb.w, h: bb.h, scaled: f, center: { x: pad + m.w / 2 - bb.x, y: pad + m.h / 2 - bb.y }, textW: m.w, textH: m.h };
+}
+/** Cadre serré autour du contenu visible (alpha) + petite marge. */
+function alphaBounds(a, w, h, margin) {
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) { const o = y * w; for (let x = 0; x < w; x++) if (a[o + x] > 0.004) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
+  if (x1 < 0) return { x: 0, y: 0, w, h };
+  x0 = Math.max(0, x0 - margin); y0 = Math.max(0, y0 - margin); x1 = Math.min(w - 1, x1 + margin); y1 = Math.min(h - 1, y1 + margin);
+  return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 }
 function canvasToBlob(c, type, q) { return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error("export impossible")), type || "image/png", q)); }
 
@@ -1375,7 +1396,8 @@ function canvasToBlob(c, type, q) { return new Promise((res, rej) => c.toBlob(b 
 function pvToCanvas(e) {
   const img = $("pvImg"); const r = img.getBoundingClientRect();
   const lp = S.lastPv; if (!lp || !r.width) return null;
-  return { x: (e.clientX - r.left) * lp.w / r.width, y: (e.clientY - r.top) * lp.h / r.height };
+  const c = lp.crop || { x: 0, y: 0, w: lp.w, h: lp.h };
+  return { x: c.x + (e.clientX - r.left) * c.w / r.width, y: c.y + (e.clientY - r.top) * c.h / r.height };
 }
 function rubberband(over, dim, c) { c = c || 0.55; return (over * dim * c) / (dim + c * Math.abs(over)); }
 function wirePreviewDrag() {

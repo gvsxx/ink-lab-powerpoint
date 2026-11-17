@@ -13,6 +13,7 @@
     /* ---- Scène : capsule flottante sur l'aperçu ---- */
     const bar = pvWrap.querySelector(".pvBar");
     bar.classList.add("hud"); pvBox.appendChild(bar);
+    if (document.body.classList.contains("ppt")) bar.querySelectorAll(".btn").forEach(b => { if (/Varier/.test(b.textContent)) { b.title = "Varier"; b.textContent = "⟳"; } });
     // statut : petit message flottant (HUD) en haut de la scène
     const st = $("status"); pvBox.appendChild(st);
     // status() réécrit className : l'affichage passe par data-show (non observé, donc pas de boucle)
@@ -32,7 +33,7 @@
     strip.appendChild(head);
     strip.appendChild($("tplGrid"));
     const chips = pvWrap.querySelector(".chipsRow");
-    pvWrap.appendChild(strip);
+    pvWrap.appendChild(strip);   // (déplacée dans le défilement pour le volet PowerPoint, plus bas)
     // flèches de défilement (pointeur précis) : défilement doux d'une page
     const grid = $("tplGrid");
     ["prev", "next"].forEach(d => {
@@ -47,6 +48,7 @@
     const seg = el("div", "seg tabSeg", TABS.map(([k, l]) => `<div class="segBtn" id="tab-${k}" role="tab">${l}</div>`).join(""));
     tabs.appendChild(seg);
     scroll.insertBefore(tabs, scroll.firstChild);
+    if (document.body.classList.contains("ppt")) { strip.classList.add("inScroll"); scroll.insertBefore(strip, tabs); }
     const pText = el("div", "panel"), pFx = el("div", "panel"), pOut = el("div", "panel");
     pText.id = "panel-text"; pFx.id = "panel-fx"; pOut.id = "panel-out";
     const endSpace = scroll.querySelector(".endSpace");
@@ -94,6 +96,14 @@
     TABS.forEach(([k]) => $("tab-" + k).tabIndex = 0);
     show(S.ui.tab && TABS.some(t => t[0] === S.ui.tab) ? S.ui.tab : "fx");
 
+    // « Tout ouvrir / Tout replier / Actives » : sections d'effets uniquement
+    window.setAllCollapsed = function (mode) {
+      PR.SCHEMA.forEach(sec => {
+        if (sec.id === "output") return;
+        const want = mode === "all" ? true : mode === "none" ? false : !(sec.toggle ? S.params[sec.toggle] : false);
+        if (!!S.collapsed[sec.id] !== want) toggleSection(sec.id);
+      });
+    };
     // cliquer une puce d'effet ouvre l'onglet Effets sur la bonne section
     const origOpen = window.openSection;
     window.openSection = function (id) { if (S.ui.tab !== "fx") show("fx", true); return origOpen.apply(this, arguments); };
