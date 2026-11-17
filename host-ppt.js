@@ -12,6 +12,7 @@
     outputSub: "image PNG sur la diapo",
     textSub: "lu depuis la zone sélectionnée",
     hideSize: true,
+    adobe: true,
     applyLabel: () => sel.kind === "ink" ? "Mettre à jour l'image" : "Insérer dans la diapo",
     emptyMessage: () => "Sélectionne une zone de texte dans ta diapo, ou tape un texte ici.",
     extraFont: () => sel.font,

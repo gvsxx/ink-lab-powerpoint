@@ -942,7 +942,7 @@ async function tplImport() {
 /* Catalogue complet Google Fonts (gfonts.js) : [famille, catégorie, graisses/100, italique] */
 const GF = new Map((window.GF_FONTS || []).map(([f, c, w, i]) => [f, { family: f, cat: c, weights: w.split(".").map(x => Number(x) * 100), italic: !!i }]));
 const GF_CATS = [["", "Toutes"], ["S", "Sans serif"], ["R", "Serif"], ["D", "Display"], ["H", "Manuscrites"], ["M", "Mono"]];
-const GF_CAT_NAME = { S: "Sans serif", R: "Serif", D: "Display", H: "Manuscrite", M: "Mono" };
+const GF_CAT_NAME = { S: "Sans serif", R: "Serif", D: "Display", H: "Manuscrite", M: "Mono", A: "Adobe Fonts" };
 const CURATED = ["Anton", "Archivo Black", "Inter", "Archivo", "Bebas Neue", "Oswald", "Barlow Condensed", "Big Shoulders Display", "Unbounded",
   "Syne", "Bricolage Grotesque", "Space Grotesk", "Dela Gothic One", "Rubik Mono One", "Bowlby One", "Six Caps", "DM Serif Display", "Playfair Display", "Instrument Serif"].filter(f => GF.has(f));
 const gfParam = f => encodeURIComponent(f).replace(/%20/g, "+");
@@ -965,6 +965,30 @@ function loadGoogleFont(family) {
   const p = addCss("https://fonts.googleapis.com/css2?family=" + gfParam(family) + spec + "&display=swap");
   gfLoaded.set(family, p);
   return p;
+}
+/* ---------- Adobe Fonts : projet web (identifiant public du kit) ---------- */
+const ADOBE = new Map();           // famille -> { weights, italic }
+let adobeKit = "";
+async function loadAdobeKit(id, quiet) {
+  id = String(id || "").trim().replace(/^.*typekit\.net\//, "").replace(/\.css.*$/, "").replace(/[^a-z0-9]/gi, "");
+  if (!HOST.adobe || !id) return false;
+  const before = new Set([...document.fonts].map(f => f.family + "|" + f.weight + "|" + f.style));
+  const ok = await addCss("https://use.typekit.net/" + id + ".css");
+  if (!ok) { if (!quiet) status("Projet Adobe Fonts « " + id + " » introuvable.", "err"); return false; }
+  ADOBE.clear();
+  [...document.fonts].forEach(f => {
+    if (before.has(f.family + "|" + f.weight + "|" + f.style)) return;
+    const fam = f.family.replace(/^["']|["']$/g, "");
+    if (GF.has(fam)) return;
+    const e = ADOBE.get(fam) || { weights: new Set(), italic: false };
+    String(f.weight).split(" ").forEach(w => { const n = parseInt(w, 10); if (n) e.weights.add(n); });
+    if (/italic|oblique/.test(f.style)) e.italic = true;
+    ADOBE.set(fam, e);
+  });
+  adobeKit = id; S.ui.adobeKit = id; saveState();
+  if (!quiet) status(ADOBE.size ? ADOBE.size + " police(s) Adobe Fonts chargée(s)." : "Projet chargé, mais aucune police trouvée dedans.", ADOBE.size ? "ok" : "err");
+  logOp("Adobe Fonts : projet " + id + " · " + ADOBE.size + " famille(s)");
+  return true;
 }
 /** Aperçus de la liste : une seule graisse par famille, par lots, seulement les lignes visibles. */
 let pvQueue = [], pvTimer = null;
@@ -1093,10 +1117,10 @@ function syncTextUI() {
   const T = S.text;
   const ta = $("tx-text"); if (!ta) return;
   if (document.activeElement !== ta) ta.value = T.text;
-  const gf = GF.get(T.family);
+  const gf = GF.get(T.family) || (ADOBE.has(T.family) ? { cat: "A", weights: ([...ADOBE.get(T.family).weights].sort((a, b) => a - b).length ? [...ADOBE.get(T.family).weights].sort((a, b) => a - b) : [400]), italic: ADOBE.get(T.family).italic } : null);
   const fn = $("tx-fontName"); fn.textContent = T.family; fn.style.fontFamily = `"${T.family}", system-ui, sans-serif`;
   $("tx-fontCat").textContent = gf ? GF_CAT_NAME[gf.cat] : (S.fonts.some(f => f.name === T.family) ? "Importée" : (HOST.extraFont && HOST.extraFont() === T.family ? "Document" : "Installée"));
-  if (gf) loadGoogleFont(T.family);
+  if (GF.has(T.family)) loadGoogleFont(T.family);
   const ws = gf ? gf.weights : [100, 200, 300, 400, 500, 600, 700, 800, 900];
   if (gf && !gf.italic && T.italic) T.italic = false;
   const itb = $("tx-it-1"); if (itb) itb.classList.toggle("disabled", !!gf && !gf.italic);
@@ -1121,12 +1145,18 @@ const FontPicker = (() => {
     pop.innerHTML = `<div class="fpTop"><input id="fp-q" class="txt" type="search" placeholder="Rechercher parmi ${GF.size} polices" autocomplete="off" spellcheck="false" />
         <div class="fpCats">${GF_CATS.map(([k, l]) => `<div class="fBtn" data-c="${k}">${l}</div>`).join("")}</div></div>
       <div class="fpList" id="fp-list"></div>
+      ${HOST.adobe ? `<div class="fpFoot adobe"><input id="fp-adobe" class="txt" type="text" placeholder="Identifiant du projet Adobe Fonts (ex. abc1def)" /><div class="btn mini" id="fp-adobeGo">Charger</div></div>` : ""}
       <div class="fpFoot"><input id="fp-sys" class="txt" type="text" placeholder="Police installée sur l'ordinateur (nom exact)" /><div class="btn mini" id="fp-imp">Importer…</div></div>`;
     document.body.appendChild(pop);
     $("fp-q").addEventListener("input", e => { q = e.target.value.trim().toLowerCase(); render(); });
     pop.querySelectorAll(".fpCats .fBtn").forEach(b => b.addEventListener("click", () => { cat = b.dataset.c; render(); $("fp-q").focus(); }));
     $("fp-sys").addEventListener("keydown", e => { if (e.key === "Enter") { const v = e.target.value.trim(); if (v) { choose(v); } } });
     $("fp-imp").addEventListener("click", () => { close(); importFonts(); });
+    if (HOST.adobe) {
+      const go = async () => { const v = $("fp-adobe").value; if (await loadAdobeKit(v)) render(); };
+      $("fp-adobeGo").addEventListener("click", go);
+      $("fp-adobe").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+    }
     $("fp-list").addEventListener("click", e => { const r = e.target.closest(".fpRow"); if (r) choose(r.dataset.f); });
     pop.addEventListener("keydown", e => {
       if (e.key === "Escape") { e.preventDefault(); close(); anchor && anchor.focus(); }
@@ -1150,6 +1180,8 @@ const FontPicker = (() => {
     if (!cat && host && match(host)) html += `<div class="fpSec">Police du document</div>` + rowHTML(host, "Document");
     const mine = S.fonts.map(f => f.name).filter(f => !cat && match(f));
     if (mine.length) html += `<div class="fpSec">Mes polices</div>` + mine.map(f => rowHTML(f, "Importée")).join("");
+    const ad = [...ADOBE.keys()].filter(f => !cat && match(f)).sort();
+    if (ad.length) html += `<div class="fpSec">Adobe Fonts · ${ad.length}</div>` + ad.map(f => rowHTML(f, "Adobe")).join("");
     const cur = CURATED.filter(f => match(f) && fromCat(f));
     if (!q && cur.length) html += `<div class="fpSec">Sélection Ink Lab</div>` + cur.map(f => rowHTML(f)).join("");
     const all = [...GF.keys()].filter(f => match(f) && fromCat(f));
@@ -1179,6 +1211,7 @@ const FontPicker = (() => {
   }
   function open(a) {
     if (!pop) build();
+    if (HOST.adobe && $("fp-adobe")) $("fp-adobe").value = adobeKit;
     anchor = a; q = ""; $("fp-q").value = ""; $("fp-sys").value = GF.has(S.text.family) ? "" : S.text.family;
     render(); place();
     pop.classList.add("open"); anchor.classList.add("open");
@@ -1422,6 +1455,7 @@ async function init() {
   const t = currentTpl(); $("tplName").value = t ? t.name : "";
   syncAll(); syncTextUI(); updateDirty(); applyPvSize();
   if (HOST.init) await HOST.init();
+  if (HOST.adobe && (S.ui.adobeKit || HOST.defaultAdobeKit)) { await loadAdobeKit(S.ui.adobeKit || HOST.defaultAdobeKit, true); syncTextUI(); }
   updateApplyLabel();
   if (!S.src) await rebuildSource();
   window.addEventListener("resize", () => { clearTimeout(window.__rz); window.__rz = setTimeout(() => scheduleRender(true), 150); });
