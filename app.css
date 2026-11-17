@@ -669,3 +669,48 @@ body.ppt #ctxBanner { margin: 8px 12px 0; }
 @media (prefers-reduced-transparency: reduce) {
   .pvBar.hud, #pvBox > #status, .tabs, .stripNav { background-color: #1c1c1f !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 }
+
+/* ---------- Sélecteur de police ---------- */
+.fontBtn {
+  display: flex; align-items: center; gap: 8px; margin-top: 4px; padding: 9px 12px; border-radius: 10px; cursor: pointer;
+  background-color: rgba(118,118,128,0.18); box-shadow: 0 0 0 0.5px var(--line) inset;
+  transition: transform var(--press), box-shadow 160ms ease, background-color 160ms ease;
+}
+.fontBtn:hover { background-color: rgba(118,118,128,0.26); }
+.fontBtn:active { transform: scale(0.98); }
+.fontBtn.open { box-shadow: 0 0 0 2px var(--acc) inset; }
+#tx-fontName { flex: 1; min-width: 0; font-size: 1.05rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0; }
+#tx-fontCat { font-size: 0.72rem; color: var(--mute); flex-shrink: 0; }
+.fontChev { color: var(--mute); font-size: 0.9rem; line-height: 1; margin-top: -4px; }
+.segBtn.disabled { opacity: 0.35; }
+
+#fontPop {
+  position: fixed; z-index: 50; display: flex; flex-direction: column; overflow: hidden;
+  border-radius: 14px; background-color: rgba(30, 30, 34, 0.86);
+  -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 0 0 0.5px rgba(255,255,255,0.14) inset, 0 24px 60px -16px rgba(0,0,0,0.85);
+  opacity: 0; visibility: hidden; transform: scale(0.96);
+  transition: opacity 160ms ease, transform var(--spring-t) var(--spring), visibility 0s linear 160ms;
+}
+#fontPop.open { opacity: 1; visibility: visible; transform: none; transition: opacity 160ms ease, transform var(--spring-t) var(--spring), visibility 0s; }
+.fpTop { padding: 10px 10px 6px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 0.5px 0 var(--line); }
+.fpTop .txt { width: 100%; margin: 0; padding: 8px 10px; }
+.fpCats { display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+.fpCats::-webkit-scrollbar { display: none; }
+.fpCats .fBtn { margin: 0; flex-shrink: 0; padding: 3px 10px; font-size: 0.75rem; border: 0; background-color: rgba(118,118,128,0.2); }
+.fpCats .fBtn.on { background-color: #f2f2f4; color: #111; }
+.fpList { flex: 1; overflow-y: auto; padding: 4px 6px 8px; overscroll-behavior: contain; }
+.fpSec { position: sticky; top: -4px; z-index: 1; padding: 8px 8px 4px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute);
+  background-color: rgba(30,30,34,0.92); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.fpRow { display: flex; align-items: baseline; gap: 10px; padding: 7px 8px; border-radius: 8px; cursor: pointer; }
+.fpRow:hover, .fpRow.act { background-color: rgba(255,255,255,0.07); }
+.fpRow.on { background-color: rgba(255, 74, 28, 0.18); }
+.fpRow.on .fpName { color: #fff; }
+.fpName { flex: 1; min-width: 0; font-size: 1.1rem; line-height: 1.3; color: rgba(242,242,244,0.92); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fpSub { font-size: 0.7rem; color: var(--mute2); flex-shrink: 0; }
+.fpEmpty { padding: 18px 10px; color: var(--mute); font-size: 0.82rem; text-align: center; }
+.fpFoot { display: flex; gap: 6px; align-items: center; padding: 8px 10px 10px; box-shadow: 0 -0.5px 0 var(--line); }
+.fpFoot .txt { flex: 1; min-width: 0; margin: 0; padding: 7px 10px; font-size: 0.8rem; }
+.fpFoot .btn { margin: 0; flex-shrink: 0; }
+@media (prefers-reduced-transparency: reduce) { #fontPop, .fpSec { background-color: #1e1e22 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } }
+@media (prefers-reduced-motion: reduce) { #fontPop { transform: none !important; } }

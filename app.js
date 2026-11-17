@@ -939,27 +939,48 @@ async function tplImport() {
 /* ======================================================================= */
 /*  TEXTE : polices et construction du masque                               */
 /* ======================================================================= */
-const GOOGLE_FONTS = [
-  { family: "Anton", weights: [400] },
-  { family: "Archivo Black", weights: [400] },
-  { family: "Inter", weights: [400, 500, 600, 700, 800, 900] },
-  { family: "Archivo", weights: [500, 700, 800, 900] },
-  { family: "Bebas Neue", weights: [400] },
-  { family: "Oswald", weights: [500, 600, 700] },
-  { family: "Barlow Condensed", weights: [600, 700, 800, 900] },
-  { family: "Big Shoulders Display", weights: [700, 800, 900] },
-  { family: "Unbounded", weights: [500, 700, 900] },
-  { family: "Syne", weights: [700, 800] },
-  { family: "Bricolage Grotesque", weights: [500, 700, 800] },
-  { family: "Space Grotesk", weights: [500, 700] },
-  { family: "Dela Gothic One", weights: [400] },
-  { family: "Rubik Mono One", weights: [400] },
-  { family: "Bowlby One", weights: [400] },
-  { family: "Six Caps", weights: [400] },
-  { family: "DM Serif Display", weights: [400] },
-  { family: "Playfair Display", weights: [700, 900] },
-  { family: "Instrument Serif", weights: [400] }
-];
+/* Catalogue complet Google Fonts (gfonts.js) : [famille, catégorie, graisses/100, italique] */
+const GF = new Map((window.GF_FONTS || []).map(([f, c, w, i]) => [f, { family: f, cat: c, weights: w.split(".").map(x => Number(x) * 100), italic: !!i }]));
+const GF_CATS = [["", "Toutes"], ["S", "Sans serif"], ["R", "Serif"], ["D", "Display"], ["H", "Manuscrites"], ["M", "Mono"]];
+const GF_CAT_NAME = { S: "Sans serif", R: "Serif", D: "Display", H: "Manuscrite", M: "Mono" };
+const CURATED = ["Anton", "Archivo Black", "Inter", "Archivo", "Bebas Neue", "Oswald", "Barlow Condensed", "Big Shoulders Display", "Unbounded",
+  "Syne", "Bricolage Grotesque", "Space Grotesk", "Dela Gothic One", "Rubik Mono One", "Bowlby One", "Six Caps", "DM Serif Display", "Playfair Display", "Instrument Serif"].filter(f => GF.has(f));
+const gfParam = f => encodeURIComponent(f).replace(/%20/g, "+");
+const gfLoaded = new Map(), gfPreviewed = new Set();
+function addCss(href) {
+  return new Promise(res => {
+    const l = document.createElement("link"); l.rel = "stylesheet"; l.href = href;
+    l.onload = () => res(true); l.onerror = () => res(false);
+    document.head.appendChild(l);
+    setTimeout(() => res(false), 8000);
+  });
+}
+/** Charge toutes les graisses (et l'italique) d'une Google Font. */
+function loadGoogleFont(family) {
+  const g = GF.get(family); if (!g) return Promise.resolve(false);
+  if (gfLoaded.has(family)) return gfLoaded.get(family);
+  const combos = [];
+  [0].concat(g.italic ? [1] : []).forEach(i => g.weights.forEach(w => combos.push(i + "," + w)));
+  const spec = g.weights.length === 1 && g.weights[0] === 400 && !g.italic ? "" : ":ital,wght@" + combos.join(";");
+  const p = addCss("https://fonts.googleapis.com/css2?family=" + gfParam(family) + spec + "&display=swap");
+  gfLoaded.set(family, p);
+  return p;
+}
+/** Aperçus de la liste : une seule graisse par famille, par lots, seulement les lignes visibles. */
+let pvQueue = [], pvTimer = null;
+function previewFonts(fams) {
+  fams.forEach(f => { if (!gfPreviewed.has(f) && !gfLoaded.has(f) && GF.has(f)) { gfPreviewed.add(f); pvQueue.push(f); } });
+  clearTimeout(pvTimer);
+  pvTimer = setTimeout(() => {
+    while (pvQueue.length) {
+      const batch = pvQueue.splice(0, 24);
+      addCss("https://fonts.googleapis.com/css2?" + batch.map(f => {
+        const ws = GF.get(f).weights, w = ws.indexOf(400) >= 0 ? 400 : ws[0];
+        return "family=" + gfParam(f) + ":wght@" + w;
+      }).join("&") + "&display=swap");
+    }
+  }, 60);
+}
 const TEXT_DEFAULTS = { text: "LOREM\nIPSUM", family: "Archivo Black", weight: 400, italic: false, size: 240, lineHeight: 92, tracking: 0, align: "center", upper: false, color: "#FFFFFF" };
 S.text = Object.assign({}, TEXT_DEFAULTS);
 S.fonts = [];          // polices importées { name, blob }
@@ -967,6 +988,7 @@ S.fonts = [];          // polices importées { name, blob }
 function fontString(T, px) { return `${T.italic ? "italic " : ""}${T.weight || 400} ${px}px "${T.family}", "Helvetica Neue", Arial, sans-serif`; }
 function textLines(T) { let t = String(T.text || "").replace(/\r\n?/g, "\n"); if (T.upper) t = t.toUpperCase(); const l = t.split("\n"); while (l.length > 1 && !l[l.length - 1].trim()) l.pop(); return l.length ? l : [""]; }
 async function ensureFont(T, px) {
+  if (GF.has(T.family)) await loadGoogleFont(T.family);
   try { await document.fonts.load(fontString(T, px), textLines(T).join(" ") || "A"); } catch (e) { /* police système ou absente */ }
 }
 /** Police réellement disponible ? (compare avec deux polices de repli) */
@@ -1038,15 +1060,6 @@ let srcTimer = null;
 function scheduleSource() { clearTimeout(srcTimer); srcTimer = setTimeout(rebuildSource, 120); }
 
 /* ---------- Section « Texte » ---------- */
-function fontOptionsHTML() {
-  const g = GOOGLE_FONTS.map(f => `<option value="g:${esc(f.family)}">${esc(f.family)}</option>`).join("");
-  const u = S.fonts.map(f => `<option value="u:${esc(f.name)}">${esc(f.name)}</option>`).join("");
-  const hostFont = HOST.extraFont && HOST.extraFont();
-  return (hostFont ? `<optgroup label="Police du document"><option value="h:${esc(hostFont)}">${esc(hostFont)}</option></optgroup>` : "") +
-    `<optgroup label="Polices Ink Lab">${g}</optgroup>` +
-    (u ? `<optgroup label="Mes polices">${u}</optgroup>` : "") +
-    `<optgroup label="Autre"><option value="sys">Police installée sur l'ordinateur…</option></optgroup>`;
-}
 function textSectionHTML() {
   return `<div class="sec" id="sec-text">
     <div class="secHead" id="head-text"><span class="chev" id="chev-text">▾</span><span class="secNum">01</span>
@@ -1054,8 +1067,7 @@ function textSectionHTML() {
     <div class="secBody">
       <textarea id="tx-text" class="txt area" rows="3" spellcheck="false"></textarea>
       <div class="row"><div class="rowTop"><span class="lbl">Police</span></div>
-        <select id="tx-font" class="sel">${fontOptionsHTML()}</select>
-        <input id="tx-sys" class="txt" type="text" placeholder="Nom exact de la police, ex. Helvetica Neue" style="display:none" />
+        <div class="fontBtn" id="tx-font" tabindex="0" role="button" aria-haspopup="listbox"><span id="tx-fontName"></span><span id="tx-fontCat"></span><span class="fontChev">⌄</span></div>
         <div class="hint" id="fontWarn" style="display:none">Police introuvable sur cet ordinateur : une police de remplacement est utilisée. Importe le fichier de la police ci-dessous.</div>
       </div>
       <div class="twoCol">
@@ -1077,23 +1089,19 @@ function textSectionHTML() {
       <div class="btnRow"><div class="btn mini" id="tx-import">+ Importer une police (.ttf, .otf, .woff2)…</div></div>
     </div></div>`;
 }
-function currentFontValue() {
-  const T = S.text;
-  if (HOST.extraFont && T.family === HOST.extraFont()) return "h:" + T.family;
-  if (GOOGLE_FONTS.some(f => f.family === T.family)) return "g:" + T.family;
-  if (S.fonts.some(f => f.name === T.family)) return "u:" + T.family;
-  return "sys";
-}
 function syncTextUI() {
   const T = S.text;
   const ta = $("tx-text"); if (!ta) return;
   if (document.activeElement !== ta) ta.value = T.text;
-  const sel = $("tx-font"); sel.innerHTML = fontOptionsHTML(); sel.value = currentFontValue();
-  const sys = $("tx-sys"); sys.style.display = sel.value === "sys" ? "block" : "none"; if (sel.value === "sys" && document.activeElement !== sys) sys.value = T.family;
-  const gf = GOOGLE_FONTS.find(f => f.family === T.family);
-  const ws = gf ? gf.weights : [300, 400, 500, 600, 700, 800, 900];
+  const gf = GF.get(T.family);
+  const fn = $("tx-fontName"); fn.textContent = T.family; fn.style.fontFamily = `"${T.family}", system-ui, sans-serif`;
+  $("tx-fontCat").textContent = gf ? GF_CAT_NAME[gf.cat] : (S.fonts.some(f => f.name === T.family) ? "Importée" : (HOST.extraFont && HOST.extraFont() === T.family ? "Document" : "Installée"));
+  if (gf) loadGoogleFont(T.family);
+  const ws = gf ? gf.weights : [100, 200, 300, 400, 500, 600, 700, 800, 900];
+  if (gf && !gf.italic && T.italic) T.italic = false;
+  const itb = $("tx-it-1"); if (itb) itb.classList.toggle("disabled", !!gf && !gf.italic);
   if (ws.indexOf(Number(T.weight)) < 0) T.weight = ws.indexOf(700) >= 0 && Number(T.weight) >= 700 ? 700 : ws[ws.length - 1 >= 0 ? Math.min(ws.length - 1, ws.indexOf(400) >= 0 ? ws.indexOf(400) : 0) : 0];
-  const names = { 300: "Light", 400: "Regular", 500: "Medium", 600: "Semibold", 700: "Bold", 800: "Extrabold", 900: "Black" };
+  const names = { 100: "Thin", 200: "Extralight", 300: "Light", 400: "Regular", 500: "Medium", 600: "Semibold", 700: "Bold", 800: "Extrabold", 900: "Black" };
   $("tx-weight").innerHTML = ws.map(w => `<option value="${w}">${names[w] || w}</option>`).join(""); $("tx-weight").value = String(T.weight);
   ["0", "1"].forEach(v => { $("tx-it-" + v).className = "segBtn" + ((T.italic ? "1" : "0") === v ? " on" : ""); });
   ["left", "center", "right"].forEach(a => { $("tx-al-" + a).className = "segBtn" + (T.align === a ? " on" : ""); });
@@ -1104,6 +1112,83 @@ function syncTextUI() {
   $("tx-upper").checked = !!T.upper;
   $("sw-txcolor").style.backgroundColor = T.color; if (document.activeElement !== $("hex-txcolor")) $("hex-txcolor").value = T.color;
 }
+
+/* ---------- Sélecteur de police (toutes les Google Fonts) ---------- */
+const FontPicker = (() => {
+  let pop = null, anchor = null, cat = "", q = "", rows = [], active = -1, io = null;
+  function build() {
+    pop = document.createElement("div"); pop.id = "fontPop"; pop.setAttribute("role", "listbox");
+    pop.innerHTML = `<div class="fpTop"><input id="fp-q" class="txt" type="search" placeholder="Rechercher parmi ${GF.size} polices" autocomplete="off" spellcheck="false" />
+        <div class="fpCats">${GF_CATS.map(([k, l]) => `<div class="fBtn" data-c="${k}">${l}</div>`).join("")}</div></div>
+      <div class="fpList" id="fp-list"></div>
+      <div class="fpFoot"><input id="fp-sys" class="txt" type="text" placeholder="Police installée sur l'ordinateur (nom exact)" /><div class="btn mini" id="fp-imp">Importer…</div></div>`;
+    document.body.appendChild(pop);
+    $("fp-q").addEventListener("input", e => { q = e.target.value.trim().toLowerCase(); render(); });
+    pop.querySelectorAll(".fpCats .fBtn").forEach(b => b.addEventListener("click", () => { cat = b.dataset.c; render(); $("fp-q").focus(); }));
+    $("fp-sys").addEventListener("keydown", e => { if (e.key === "Enter") { const v = e.target.value.trim(); if (v) { choose(v); } } });
+    $("fp-imp").addEventListener("click", () => { close(); importFonts(); });
+    $("fp-list").addEventListener("click", e => { const r = e.target.closest(".fpRow"); if (r) choose(r.dataset.f); });
+    pop.addEventListener("keydown", e => {
+      if (e.key === "Escape") { e.preventDefault(); close(); anchor && anchor.focus(); }
+      else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); move(e.key === "ArrowDown" ? 1 : -1); }
+      else if (e.key === "Enter" && e.target.id === "fp-q" && rows[active]) { e.preventDefault(); choose(rows[active].dataset.f); }
+    });
+    document.addEventListener("pointerdown", e => { if (pop.classList.contains("open") && !pop.contains(e.target) && !(anchor && anchor.contains(e.target))) close(); }, true);
+    window.addEventListener("resize", () => { if (pop.classList.contains("open")) place(); });
+    io = new IntersectionObserver(es => previewFonts(es.filter(x => x.isIntersecting).map(x => x.target.dataset.f)), { root: $("fp-list"), rootMargin: "120px 0px" });
+  }
+  function rowHTML(f, sub) {
+    const g = GF.get(f);
+    return `<div class="fpRow${f === S.text.family ? " on" : ""}" data-f="${esc(f)}" role="option"><span class="fpName" style="font-family:&quot;${esc(f)}&quot;, system-ui">${esc(f)}</span><span class="fpSub">${sub || (g ? GF_CAT_NAME[g.cat] : "")}</span></div>`;
+  }
+  function render() {
+    pop.querySelectorAll(".fpCats .fBtn").forEach(b => b.classList.toggle("on", b.dataset.c === cat));
+    const match = f => (!q || f.toLowerCase().includes(q));
+    const fromCat = f => !cat || (GF.get(f) && GF.get(f).cat === cat);
+    let html = "";
+    const host = HOST.extraFont && HOST.extraFont();
+    if (!cat && host && match(host)) html += `<div class="fpSec">Police du document</div>` + rowHTML(host, "Document");
+    const mine = S.fonts.map(f => f.name).filter(f => !cat && match(f));
+    if (mine.length) html += `<div class="fpSec">Mes polices</div>` + mine.map(f => rowHTML(f, "Importée")).join("");
+    const cur = CURATED.filter(f => match(f) && fromCat(f));
+    if (!q && cur.length) html += `<div class="fpSec">Sélection Ink Lab</div>` + cur.map(f => rowHTML(f)).join("");
+    const all = [...GF.keys()].filter(f => match(f) && fromCat(f));
+    html += `<div class="fpSec">Google Fonts · ${all.length}</div>` + (all.length ? all.map(f => rowHTML(f)).join("") : `<div class="fpEmpty">Aucune police ne correspond à « ${esc(q)} ».</div>`);
+    const list = $("fp-list"); list.innerHTML = html; list.scrollTop = 0;
+    rows = [...list.querySelectorAll(".fpRow")];
+    io.disconnect(); rows.forEach(r => io.observe(r));
+    active = rows.findIndex(r => r.dataset.f === S.text.family);
+    if (active < 0 && q && rows.length) active = 0;
+    mark(false);
+  }
+  function mark(scroll) {
+    rows.forEach((r, i) => r.classList.toggle("act", i === active));
+    if (scroll && rows[active]) rows[active].scrollIntoView({ block: "nearest" });
+  }
+  function move(d) { if (!rows.length) return; active = Math.max(0, Math.min(rows.length - 1, (active < 0 ? -1 : active) + d)); mark(true); }
+  function place() {
+    const r = anchor.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
+    const w = Math.min(Math.max(r.width, 300), vw - 24);
+    const left = Math.max(12, Math.min(r.left, vw - w - 12));
+    const below = vh - r.bottom - 12, above = r.top - 12;
+    const up = below < 320 && above > below;
+    const h = Math.min(520, Math.max(220, up ? above - 6 : below - 6));
+    pop.style.width = w + "px"; pop.style.left = left + "px"; pop.style.height = h + "px";
+    pop.style.top = (up ? r.top - 6 - h : r.bottom + 6) + "px";
+    pop.style.transformOrigin = (r.left + r.width / 2 - left) + "px " + (up ? "100%" : "0");   // naît du bouton
+  }
+  function open(a) {
+    if (!pop) build();
+    anchor = a; q = ""; $("fp-q").value = ""; $("fp-sys").value = GF.has(S.text.family) ? "" : S.text.family;
+    render(); place();
+    pop.classList.add("open"); anchor.classList.add("open");
+    requestAnimationFrame(() => { $("fp-q").focus({ preventScroll: true }); if (rows[active]) rows[active].scrollIntoView({ block: "center" }); });
+  }
+  function close() { if (!pop) return; pop.classList.remove("open"); if (anchor) anchor.classList.remove("open"); }
+  function toggle(a) { if (pop && pop.classList.contains("open")) close(); else open(a); }
+  function choose(f) { close(); setText("family", f); if (anchor) anchor.focus({ preventScroll: true }); status("Police « " + f + " »."); }
+  return { open, close, toggle };
+})();
 function setText(k, v) { S.text[k] = v; syncTextUI(); saveState(); scheduleSource(); if (HOST.onTextChange) HOST.onTextChange(); }
 function wireTextSection() {
   $("head-text").addEventListener("click", () => {
@@ -1112,14 +1197,10 @@ function wireTextSection() {
   });
   if (S.collapsed.text) { $("sec-text").classList.add("closed"); $("chev-text").textContent = "▸"; }
   $("tx-text").addEventListener("input", e => setText("text", e.target.value));
-  $("tx-font").addEventListener("change", e => {
-    const v = e.target.value;
-    if (v === "sys") { $("tx-sys").style.display = "block"; $("tx-sys").focus(); return; }
-    setText("family", v.slice(2));
-  });
-  $("tx-sys").addEventListener("change", e => { const v = e.target.value.trim(); if (v) setText("family", v); });
+  $("tx-font").addEventListener("click", () => FontPicker.toggle($("tx-font")));
+  $("tx-font").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") { e.preventDefault(); FontPicker.open($("tx-font")); } });
   $("tx-weight").addEventListener("change", e => setText("weight", Number(e.target.value)));
-  ["0", "1"].forEach(v => $("tx-it-" + v).addEventListener("click", () => setText("italic", v === "1")));
+  ["0", "1"].forEach(v => $("tx-it-" + v).addEventListener("click", () => { if (v === "1" && $("tx-it-1").classList.contains("disabled")) { status("Cette police n'existe pas en italique."); return; } setText("italic", v === "1"); }));
   ["left", "center", "right"].forEach(a => $("tx-al-" + a).addEventListener("click", () => setText("align", a)));
   [["size", 60, 4000], ["lineHeight", 40, 200], ["tracking", -300, 1000]].forEach(([k, mn, mx]) => {
     const r = $("tx-" + k), v = $("txv-" + k); if (!r) return;
