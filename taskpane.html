@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ink Lab</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Inter:wght@400;500;600;700;800;900&family=Archivo:wght@500;700;800;900&family=Bebas+Neue&family=Oswald:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800;900&family=Big+Shoulders+Display:wght@700;800;900&family=Unbounded:wght@500;700;900&family=Syne:wght@700;800&family=Bricolage+Grotesque:wght@500;700;800&family=Space+Grotesk:wght@500;700&family=Dela+Gothic+One&family=Rubik+Mono+One&family=Bowlby+One&family=Six+Caps&family=DM+Serif+Display&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Instrument+Serif:ital@0;1&display=swap" />
+<link rel="stylesheet" href="app.css" />
+</head>
+<body class="ppt">
+<div id="app">
+
+  <!-- En-tête -->
+  <div id="top">
+    <div class="brand"><span class="logo">INK<span class="logoAcc">LAB</span></span><span class="ver">2.0</span></div>
+    <div class="srcChip" id="srcChip" title="Calque source">
+      <span class="srcDot" id="srcDot"></span><span class="srcName" id="srcName">Aucun texte</span>
+    </div>
+    <div class="hdrBtn" id="btnZero" title="Tout remettre à zéro : toutes les sections coupées, texte dans sa couleur d'origine, sans fond">Tout réinitialiser</div>
+    <div class="iconBtn" id="btnRefresh" title="Relire la zone de texte sélectionnée">↻</div>
+  </div>
+
+  <!-- Bandeau objet dynamique -->
+  <div id="ctxBanner">
+    <div class="bnTxt" id="bnTxt"></div>
+    <div class="btnRow" id="bnBtns"></div>
+  </div>
+
+  <!-- Aperçu -->
+  <div id="pvWrap">
+    <div id="pvBox">
+      <canvas id="pvImg"></canvas>
+      <div id="pvEmpty">
+        <div class="emptyBig">T</div>
+        <div id="pvEmptyMsg">Tape un texte pour commencer</div>
+      </div>
+      <div id="pvBadge">ORIGINAL</div>
+      <div id="pvHint">Glisse les repères pour placer le flou</div>
+      <div id="pvMs"></div>
+    </div>
+    <div class="pvBar">
+      <div class="seg mini" id="pvBgSeg">
+        <div class="segBtn" id="pvbg-auto" title="Fond du template">Auto</div>
+        <div class="segBtn" id="pvbg-checker" title="Transparence">▦</div>
+        <div class="segBtn" id="pvbg-dark" title="Fond noir">●</div>
+        <div class="segBtn" id="pvbg-light" title="Fond blanc">○</div>
+      </div>
+      <div class="seg mini" id="pvSizeSeg">
+        <div class="segBtn" id="pvs-S">S</div>
+        <div class="segBtn" id="pvs-M">M</div>
+        <div class="segBtn" id="pvs-L">L</div>
+        <div class="segBtn" id="pvs-XL">XL</div>
+      </div>
+      <div class="btn mini ghost" id="btnCompare" title="Voir le texte sans effet">Avant</div>
+      <div class="btn mini ghost" id="btnSeed" title="Nouveau tirage aléatoire (éclats, encre, grain…)">⟳ Varier</div>
+    </div>
+    <div class="chipsRow"><span class="chipsLbl">Actifs</span><div id="fxChips"></div></div>
+  </div>
+
+  <!-- Zone défilante -->
+  <div id="scroll">
+
+    <div id="textSlot"></div>
+
+    <div class="sec" id="sec-templates">
+      <div class="secHead" id="head-templates">
+        <span class="chev" id="chev-templates">▾</span><span class="secNum">01</span>
+        <span class="secTitle">TEMPLATES</span><span class="secSub" id="tplCount"></span>
+      </div>
+      <div class="secBody">
+        <div class="filterRow" id="tplFilter"></div>
+        <div id="tplGrid"></div>
+        <div class="tplEdit">
+          <div class="rowTop">
+            <span class="lbl">Nom du template</span>
+            <span class="badge" id="dirtyBadge">modifié</span>
+          </div>
+          <input id="tplName" class="txt" type="text" placeholder="Nom du template" />
+          <div class="btnRow">
+            <div class="btn mini accent" id="tplSave" title="Écrase le template sélectionné avec les réglages actuels (et le nom)">Enregistrer</div>
+            <div class="btn mini" id="tplNew" title="Crée un nouveau template avec les réglages actuels">+ Nouveau</div>
+            <div class="btn mini" id="tplDup" title="Duplique le template sélectionné">Dupliquer</div>
+            <div class="btn mini danger" id="tplDel">Supprimer</div>
+          </div>
+          <div class="btnRow">
+            <div class="btn mini ghost" id="tplRevert" title="Annule les modifications non enregistrées">Annuler modifs</div>
+            <div class="btn mini ghost" id="tplImport">Importer…</div>
+            <div class="btn mini ghost" id="tplExport">Exporter…</div>
+            <div class="btn mini ghost" id="tplRestore" title="Restaure les templates d'origine (garde les tiens)">Originaux</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foldBar">
+      <span class="foldLbl">Sections</span>
+      <div class="fBtn" id="fold-active" title="N'ouvre que les sections activées">Actives</div>
+      <div class="fBtn" id="fold-none">Tout ouvrir</div>
+      <div class="fBtn" id="fold-all">Tout replier</div>
+    </div>
+    <div id="sections"></div>
+    <div class="endSpace"></div>
+  </div>
+
+  <!-- Pied -->
+  <div id="bottom">
+    <div id="status">Prêt.</div>
+    <div class="btnRow">
+      <div class="btn ghost" id="btnResetAll" title="Annule tes réglages et revient aux valeurs du template sélectionné">↺ Template</div>
+      <div class="btn primary" id="btnApply">Insérer dans la diapo</div>
+    </div>
+  </div>
+
+</div>
+<script src="core.js"></script>
+<script src="host-ppt.js"></script>
+<script src="app.js"></script>
+<script src="fluid.js"></script>
+</body>
+</html>
