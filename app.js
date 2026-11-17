@@ -1335,6 +1335,7 @@ async function init() {
   }
   $("textSlot").innerHTML = textSectionHTML();
   buildSections(); wireStatic(); wireSections(); wireTextSection(); renderFilter(); renderTemplateGrid();
+  window.__inkBuilt = true; if (window.InkLayout) window.InkLayout();
   // numérotation : Texte 01, Templates 02, puis les sections
   document.querySelectorAll("#scroll .secNum").forEach((el, i) => { el.textContent = String(i + 1).padStart(2, "0"); });
   const t = currentTpl(); $("tplName").value = t ? t.name : "";
