@@ -753,7 +753,7 @@ body.uxb #pvBox #pvImg { position: relative; z-index: 0; }
 .bStyleLbl { color: rgba(255,255,255,0.5); }
 .bChev { color: rgba(255,255,255,0.5); margin-top: -3px; }
 .bRight { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
-body.uxb .bGhost { margin: 0; padding: 10px 14px; border-radius: 999px; font-size: 13px; font-weight: 500; color: #fff; border: 0;
+body.uxb .bGhost, body.uxb .bRight #btnZero { margin: 0; padding: 10px 14px; border-radius: 999px; font-size: 13px; font-weight: 500; color: #fff; border: 0;
   background-color: rgba(28,28,32,0.7); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.14); }
 body.uxb .bExport { margin: 0; flex: none !important; padding: 11px 20px !important; border-radius: 999px !important; font-size: 14px !important; }
 
@@ -835,15 +835,19 @@ body.uxb #fontPop { z-index: 60; }
   body.uxb #pvBox { border-radius: 26px; padding: 64px 12px 186px; }
   body.uxb #pvBox.sheetOpen { padding-left: 12px; }
   .bWord, .bStylePill { display: none; }
-  body.uxb .bGhost { display: none; }
+  body.uxb .bRight #btnZero { display: flex; align-items: center; justify-content: center; padding: 0; width: 44px; height: 44px; font-size: 0; }
+  body.uxb .bRight #btnZero::before { content: "↺"; font-size: 20px; line-height: 1; }
+  body.uxb .bRight #btnZero.undo::before { content: "↶"; }
+  body.uxb .bRight { gap: 8px; }
   .bRail { left: 10px; right: 10px; top: auto; bottom: 120px; transform: none; flex-direction: row; overflow-x: auto; max-height: none; scrollbar-width: none; padding: 2px; }
   .bRail::-webkit-scrollbar { display: none; }
   .bRailSep { width: 1px; height: auto; margin: 10px 2px; }
   .bTip { display: none; }
   .bSheet { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; height: 52%; transform: translateY(24px); border-radius: 26px; }
-  body.uxb #pvBox.sheetOpen .bRail, body.uxb #pvBox.sheetOpen .bDock { opacity: 0; pointer-events: none; }
+  body.uxb #pvBox.sheetOpen .bDock { opacity: 0; pointer-events: none; }
+  .bRail { transition: bottom var(--spring-b-t, 380ms) var(--spring-b, ease); }
   body.uxb #pvBox.sheetOpen #pvMs, body.uxb #pvBox.sheetOpen #pvHint { display: none; }
-  .bRail, .bDock { transition: opacity 180ms ease; }
+  .bDock { transition: opacity 180ms ease; }
   .bSheet.open { transform: none; }
   body.uxb .pvBar.bHud { display: none; }
   body.uxb #pvMs { display: none; }
@@ -852,7 +856,7 @@ body.uxb #fontPop { z-index: 60; }
 }
 @media (prefers-reduced-motion: reduce) { .bSheet { transform: none !important; } }
 @media (prefers-reduced-transparency: reduce) {
-  .bStylePill, body.uxb .bGhost, .bTool, .bSheet, .bStrip, body.uxb #fxChips .chip { background-color: #1C1C20 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .bStylePill, body.uxb .bGhost, body.uxb .bRight #btnZero, .bTool, .bSheet, .bStrip, body.uxb #fxChips .chip { background-color: #1C1C20 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 }
 
 /* icônes : boîte flex centrée (pas de ligne de base de texte) */
@@ -2486,7 +2490,7 @@ function renderFilter() {
 }
 function renderTemplateGrid() {
   const list = S.templates.filter(t => S.filter === "Tous" || t.tag === S.filter);
-  $("tplCount").textContent = S.templates.length + " templates";
+  if ($("tplCount")) $("tplCount").textContent = S.templates.length + " templates";
   $("tplGrid").innerHTML = list.map(t => {
     const p = t.params;
     return `<div class="tpl${t.id === S.currentId ? " on" : ""}" id="tpl-${t.id}">
@@ -3824,10 +3828,15 @@ function wirePreviewDrag() {
     if (v < LO || v > HI) setParam(k, Math.max(LO, Math.min(HI, v)));
     scheduleRender(true);
   };
-  box.addEventListener("dblclick", () => {
-    const lp = S.lastPv; if (!lp || !lp.meta || !lp.meta.prog || !lp.meta.prog.active) return;
-    S.params.progStart = PR.DEFAULTS.progStart; syncControl("progStart");
-    setParam("progEnd", PR.DEFAULTS.progEnd); status("Repères du flou remis par défaut.");
+  // double-clic sur un repère : seul ce repère revient à sa position par défaut
+  box.addEventListener("dblclick", e => {
+    const lp = S.lastPv; const p = lp && lp.meta && lp.meta.prog; if (!p || !p.active) return;
+    const pt = pvToCanvas(e); if (!pt) return;
+    const fx = along(p, pt);
+    const k = Math.abs(fx - p.startPos) <= Math.abs(fx - p.endPos) ? "progStart" : "progEnd";
+    let v = PR.DEFAULTS[k];
+    if (k === "progStart") v = Math.min(v, S.params.progEnd - 1); else v = Math.max(v, S.params.progStart + 1);
+    setParam(k, v); status(k === "progStart" ? "Repère de début remis par défaut." : "Repère de flou maximal remis par défaut.");
   });
   box.style.touchAction = "none";
   box.addEventListener("pointerdown", down);
@@ -3856,6 +3865,21 @@ async function init() {
   }
   $("textSlot").innerHTML = textSectionHTML();
   buildSections(); wireStatic(); wireSections(); wireTextSection(); renderFilter(); renderTemplateGrid();
+  // « Tout réinitialiser » remet aussi la typo à zéro (police, graisse, taille, interlignage, approche, alignement, couleur) ;
+  // le second clic « Annuler » la restaure avec le reste. Les mots tapés sont conservés.
+  let textUndo = null;
+  $("btnZero").addEventListener("click", () => {
+    if (zeroUndo) { if (textUndo) { S.text = textUndo; textUndo = null; } }
+    else { textUndo = Object.assign({}, S.text); S.text = Object.assign({}, TEXT_DEFAULTS, { text: S.text.text }); }
+    syncTextUI(); saveState(); scheduleSource(); if (HOST.onTextChange) HOST.onTextChange();
+  }, true);
+  document.addEventListener("pointerup", e => {
+    if (e.pointerType !== "touch") return;
+    const r = e.target.closest && e.target.closest("input.rng"); if (!r) return;
+    const now = Date.now();
+    if (r.__lastTap && now - r.__lastTap < 320) { r.__lastTap = 0; r.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })); }
+    else r.__lastTap = now;
+  });
   window.__inkBuilt = true; if (window.InkLayout) window.InkLayout();
   // numérotation : Texte 01, Templates 02, puis les sections
   document.querySelectorAll("#scroll .secNum").forEach((el, i) => { el.textContent = String(i + 1).padStart(2, "0"); });
@@ -3922,7 +3946,7 @@ init().catch(e => { console.error(e); status("Erreur au démarrage : " + (e && e
     const brand = el("div", "bBrand", `<span class="bMark">${svgDrop()}</span><span class="bWord">INK<b>LAB</b></span>`);
     const pill = el("div", "bStylePill", `<span class="bStyleLbl">Style</span><span id="bStyleName"></span><span class="bChev">⌄</span>`);
     const right = el("div", "bRight");
-    const zero = $("btnZero"); zero.classList.add("bGhost"); zero.textContent = "Réinitialiser";
+    const zero = $("btnZero"); zero.classList.add("bGhost"); zero.textContent = "Réinitialiser"; zero.title = "Tout réinitialiser (typo comprise)"; zero.setAttribute("aria-label", "Tout réinitialiser");
     const apply = $("btnApply"); apply.classList.add("bExport");
     right.appendChild(zero); right.appendChild(apply);
     top.appendChild(brand); top.appendChild(pill); top.appendChild(right);
@@ -4008,8 +4032,9 @@ init().catch(e => { console.error(e); status("Erreur au démarrage : " + (e && e
       if (narrow && sheet.classList.contains("open")) {
         const h = Math.round(pvBox.clientHeight * 0.52);
         sheet.style.height = h + "px";
-        pvBox.style.paddingBottom = (h + 20) + "px";
-      } else { sheet.style.height = ""; pvBox.style.paddingBottom = ""; }
+        rail.style.bottom = (h + 18) + "px";                 // le rail reste au-dessus du panneau : on change d'outil sans fermer
+        pvBox.style.paddingBottom = (h + 18 + 48 + 14) + "px";
+      } else { sheet.style.height = ""; rail.style.bottom = ""; pvBox.style.paddingBottom = ""; }
     }
     window.addEventListener("resize", () => { fitNarrow(); });
     window.openSection = function (id) {

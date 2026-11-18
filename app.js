@@ -105,7 +105,7 @@ function renderFilter() {
 }
 function renderTemplateGrid() {
   const list = S.templates.filter(t => S.filter === "Tous" || t.tag === S.filter);
-  $("tplCount").textContent = S.templates.length + " templates";
+  if ($("tplCount")) $("tplCount").textContent = S.templates.length + " templates";
   $("tplGrid").innerHTML = list.map(t => {
     const p = t.params;
     return `<div class="tpl${t.id === S.currentId ? " on" : ""}" id="tpl-${t.id}">
@@ -1284,7 +1284,11 @@ async function renderPreview(hq) {
   const t0 = Date.now();
   const P = S.compare ? neutralParams() : eff(S.params);
   const box = $("pvBox");
-  const bw = Math.max(120, box.clientWidth || 320), bh = Math.max(80, box.clientHeight || 240);
+  // zone utile : la boîte moins ses marges intérieures (la mise en page B y loge outils et bande de styles)
+  const cs = getComputedStyle(box);
+  const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+  const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  const bw = Math.max(120, (box.clientWidth || 320) - padX), bh = Math.max(80, (box.clientHeight || 240) - padY);
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const maxDim = hq ? Math.min(HQ_MAX * 1.25, Math.max(bw, bh) * dpr * 1.1) : Math.min(DRAFT_MAX, Math.max(bw, bh) * 0.9);
   const texText = S.compare ? null : (P.tex ? S.texCache.get(P.tex) || null : null);
@@ -1439,10 +1443,15 @@ function wirePreviewDrag() {
     if (v < LO || v > HI) setParam(k, Math.max(LO, Math.min(HI, v)));
     scheduleRender(true);
   };
-  box.addEventListener("dblclick", () => {
-    const lp = S.lastPv; if (!lp || !lp.meta || !lp.meta.prog || !lp.meta.prog.active) return;
-    S.params.progStart = PR.DEFAULTS.progStart; syncControl("progStart");
-    setParam("progEnd", PR.DEFAULTS.progEnd); status("Repères du flou remis par défaut.");
+  // double-clic sur un repère : seul ce repère revient à sa position par défaut
+  box.addEventListener("dblclick", e => {
+    const lp = S.lastPv; const p = lp && lp.meta && lp.meta.prog; if (!p || !p.active) return;
+    const pt = pvToCanvas(e); if (!pt) return;
+    const fx = along(p, pt);
+    const k = Math.abs(fx - p.startPos) <= Math.abs(fx - p.endPos) ? "progStart" : "progEnd";
+    let v = PR.DEFAULTS[k];
+    if (k === "progStart") v = Math.min(v, S.params.progEnd - 1); else v = Math.max(v, S.params.progStart + 1);
+    setParam(k, v); status(k === "progStart" ? "Repère de début remis par défaut." : "Repère de flou maximal remis par défaut.");
   });
   box.style.touchAction = "none";
   box.addEventListener("pointerdown", down);
@@ -1471,6 +1480,21 @@ async function init() {
   }
   $("textSlot").innerHTML = textSectionHTML();
   buildSections(); wireStatic(); wireSections(); wireTextSection(); renderFilter(); renderTemplateGrid();
+  // « Tout réinitialiser » remet aussi la typo à zéro (police, graisse, taille, interlignage, approche, alignement, couleur) ;
+  // le second clic « Annuler » la restaure avec le reste. Les mots tapés sont conservés.
+  let textUndo = null;
+  $("btnZero").addEventListener("click", () => {
+    if (zeroUndo) { if (textUndo) { S.text = textUndo; textUndo = null; } }
+    else { textUndo = Object.assign({}, S.text); S.text = Object.assign({}, TEXT_DEFAULTS, { text: S.text.text }); }
+    syncTextUI(); saveState(); scheduleSource(); if (HOST.onTextChange) HOST.onTextChange();
+  }, true);
+  document.addEventListener("pointerup", e => {
+    if (e.pointerType !== "touch") return;
+    const r = e.target.closest && e.target.closest("input.rng"); if (!r) return;
+    const now = Date.now();
+    if (r.__lastTap && now - r.__lastTap < 320) { r.__lastTap = 0; r.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })); }
+    else r.__lastTap = now;
+  });
   window.__inkBuilt = true; if (window.InkLayout) window.InkLayout();
   // numérotation : Texte 01, Templates 02, puis les sections
   document.querySelectorAll("#scroll .secNum").forEach((el, i) => { el.textContent = String(i + 1).padStart(2, "0"); });
