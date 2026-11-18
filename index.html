@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0b0b0d" />
 <title>Ink Lab</title>
-<meta name="description" content="Effets de texte pour Photoshop, PowerPoint et le navigateur : ink bleed, glows, flous, destruction, textures HD." />
+<meta name="description" content="Effets de texte pour Photoshop, PowerPoint, Google Slides et le navigateur : ink bleed, glows, flous, destruction, textures HD." />
 <link rel="icon" href="icon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -106,7 +106,8 @@ h2 { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 4vw, 
 .style.paper { background-color: var(--paper); color: #18181b; }
 
 /* Téléchargements */
-.dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1180px) { .dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .card { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 22px; background-color: var(--card); box-shadow: 0 0 0 0.5px var(--line) inset; min-width: 0; }
 .card.hl { background: linear-gradient(160deg, #23160f 0%, var(--card) 55%); box-shadow: 0 0 0 0.5px rgba(255,74,28,.35) inset; }
 .app { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
@@ -153,7 +154,7 @@ footer .wrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: space
 <main id="top">
   <div class="wrap hero">
     <div>
-      <p class="eyebrow">Effets de texte · Photoshop · PowerPoint · navigateur</p>
+      <p class="eyebrow">Effets de texte · Photoshop · PowerPoint · Google Slides · navigateur</p>
       <h1>Du texte qui bave, qui brûle, qui glitche.</h1>
       <p class="lead">Ink bleed, glows, flous progressifs, destruction et textures HD, avec un aperçu en temps réel. Choisis un style, règle-le, puis exporte un PNG transparent ou garde ton texte modifiable.</p>
       <div class="ctas">
@@ -210,7 +211,7 @@ footer .wrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: space
   <section id="telecharger">
     <div class="wrap">
       <h2>Dans tes outils.</h2>
-      <p class="intro">Le même moteur et les mêmes styles partout. Les mises à jour de la version PowerPoint et de la version web arrivent toutes seules.</p>
+      <p class="intro">Le même moteur et les mêmes styles partout. Les mises à jour des versions PowerPoint, Google Slides et web arrivent toutes seules.</p>
       <div class="dl">
         <div class="card hl">
           <div class="app">Plugin</div>
@@ -235,6 +236,18 @@ footer .wrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: space
           </ol>
           <p class="req">Clique sur une image Ink Lab pour retrouver son texte et ses réglages.</p>
           <div class="btns"><a class="btn primary" href="install.html">Installer</a><a class="btn" href="manifest.xml" download>manifest.xml</a></div>
+        </div>
+        <div class="card">
+          <div class="app">Module</div>
+          <h3>Google Slides</h3>
+          <p class="req">Google Slides dans le navigateur, Mac et Windows.</p>
+          <ol>
+            <li>Copie le script depuis la page d'installation.</li>
+            <li>Colle-le dans <b>Extensions › Apps Script</b>, puis recharge.</li>
+            <li>Sélectionne une zone de texte, puis <b>Ink Lab › Ouvrir Ink Lab</b>.</li>
+          </ol>
+          <p class="req">Clique sur une image Ink Lab pour retrouver son texte et ses réglages.</p>
+          <div class="btns"><a class="btn primary" href="install-gslides.html">Installer</a><a class="btn" href="Code.gs" download>Code.gs</a></div>
         </div>
         <div class="card">
           <div class="app">Navigateur</div>

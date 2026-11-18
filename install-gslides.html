@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Ink Lab pour Google Slides</title>
+<link rel="icon" href="icon.png" />
+<style>
+  :root { --bg: #0e0e10; --card: #1c1c1f; --fg: #f2f2f4; --mute: rgba(235,235,245,.6); --acc: #ff4a1c; --line: rgba(255,255,255,.08); color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif;
+    padding-block: 48px 64px; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+  main { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .logo { font-weight: 800; letter-spacing: .08em; font-size: 15px; } .logo b { color: var(--acc); }
+  h1 { font-size: clamp(30px, 6vw, 44px); line-height: 1.05; letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+  p { margin: 0; color: var(--mute); }
+  .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 0 0 .5px var(--line) inset; display: flex; flex-direction: column; gap: 14px; }
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+  .n { width: 28px; height: 28px; border-radius: 50%; background: rgba(118,118,128,.24); display: grid; place-items: center; font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .step h2 { font-size: 16px; margin: 3px 0 4px; letter-spacing: -.01em; }
+  pre { margin: 0; padding: 12px 14px; border-radius: 10px; background: #0b0b0d; box-shadow: 0 0 0 .5px var(--line) inset; color: #e9e9ee;
+    font: 12.5px/1.5 ui-monospace, "SF Mono", Menlo, monospace; white-space: pre-wrap; word-break: break-all; }
+  button { appearance: none; border: 0; border-radius: 11px; padding: 11px 16px; font: 600 15px/1 inherit; font-family: inherit; color: #fff; background: var(--acc);
+    cursor: pointer; transition: transform 100ms ease-out, opacity 150ms ease; box-shadow: 0 6px 18px -8px rgba(255,74,28,.75); }
+  button:active { transform: scale(.97); }
+  button.done { background: #30d158; box-shadow: none; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  kbd { font: 600 12px/1 inherit; font-family: inherit; padding: 3px 6px; border-radius: 5px; background: rgba(118,118,128,.28); color: var(--fg); }
+  small { color: var(--mute); font-size: 13px; }
+  a { color: #ff8a66; }
+  @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+  pre.code { max-height: 220px; overflow: auto; white-space: pre; word-break: normal; }
+  ol.sub { margin: 6px 0 0; padding-left: 18px; color: var(--mute); } ol.sub li { margin: 2px 0; }
+</style>
+</head>
+<body>
+<main>
+  <div class="logo">INK <b>LAB</b></div>
+  <h1>Installer Ink Lab dans Google Slides</h1>
+  <p>Un script à coller une fois dans ta présentation. Le volet Ink Lab apparaît ensuite dans le menu de Google Slides, et ses mises à jour arrivent toutes seules.</p>
+
+  <div class="card">
+    <div class="step"><div class="n">1</div><div>
+      <h2>Copie le script</h2>
+      <div class="row" style="margin-bottom:10px"><button id="copy">Copier le script</button><small id="hint"></small><a href="Code.gs" download>Télécharger Code.gs</a></div>
+      <pre class="code" id="cmd">/**
+ * INK LAB pour Google Slides
+ * Colle ce fichier dans Extensions › Apps Script de ta présentation, enregistre, puis recharge la présentation.
+ * Le volet est chargé depuis https://gvsxx.github.io/ink-lab-powerpoint/ : les mises à jour arrivent toutes seules.
+ */
+var INKLAB_URL = &quot;https://gvsxx.github.io/ink-lab-powerpoint/gslides.html&quot;;
+var INKLAB_TAG = &quot;INKLAB:&quot;;
+
+function onOpen(e) {
+  SlidesApp.getUi().createMenu(&quot;Ink Lab&quot;)
+    .addItem(&quot;Ouvrir Ink Lab&quot;, &quot;inkLabOpen&quot;)
+    .addToUi();
+}
+function onInstall(e) { onOpen(e); }
+
+function inkLabOpen() {
+  var html = UrlFetchApp.fetch(INKLAB_URL + &quot;?t=&quot; + Date.now(), { muteHttpExceptions: true }).getContentText();
+  var out = HtmlService.createHtmlOutput(html).setTitle(&quot;Ink Lab&quot;).setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  SlidesApp.getUi().showSidebar(out);
+}
+
+/* ---------- Lecture de la sélection ---------- */
+function inkLabSelection() {
+  var sel = SlidesApp.getActivePresentation().getSelection();
+  var type = sel.getSelectionType();
+  var els = null;
+  if (type == SlidesApp.SelectionType.PAGE_ELEMENT) els = sel.getPageElementRange().getPageElements();
+  else if (type == SlidesApp.SelectionType.TEXT || type == SlidesApp.SelectionType.TABLE_CELL) {
+    try { els = sel.getPageElementRange() ? sel.getPageElementRange().getPageElements() : null; } catch (e) { els = null; }
+  }
+  if (!els || !els.length) return { kind: &quot;none&quot; };
+  var el = els[0];
+  var box = { left: el.getLeft(), top: el.getTop(), width: el.getWidth(), height: el.getHeight() };
+  var id = el.getObjectId();
+  var t = el.getPageElementType();
+  if (t == SlidesApp.PageElementType.IMAGE) {
+    var desc = el.asImage().getDescription() || &quot;&quot;;
+    if (desc.indexOf(INKLAB_TAG) === 0) {
+      var key = desc.slice(INKLAB_TAG.length);
+      var raw = PropertiesService.getDocumentProperties().getProperty(&quot;inklab:&quot; + key);
+      return { kind: &quot;ink&quot;, shapeId: id, key: key, box: box, data: raw ? JSON.parse(raw) : null };
+    }
+    return { kind: &quot;other&quot;, shapeId: id, box: box };
+  }
+  if (t != SlidesApp.PageElementType.SHAPE) return { kind: &quot;other&quot;, shapeId: id, box: box };
+  var tr = el.asShape().getText();
+  var text = tr.asString().replace(/\n$/, &quot;&quot;);
+  if (!text.trim()) return { kind: &quot;other&quot;, shapeId: id, box: box };
+  var st = tr.getTextStyle();
+  var color = null;
+  try { var fc = st.getForegroundColor(); if (fc &amp;&amp; fc.getColorType() == SlidesApp.ColorType.RGB) color = fc.asRgbColor().asHexString(); } catch (e) { color = null; }
+  var align = null;
+  try {
+    var a = tr.getParagraphStyle().getParagraphAlignment();
+    align = a == SlidesApp.ParagraphAlignment.CENTER ? &quot;center&quot; : a == SlidesApp.ParagraphAlignment.END ? &quot;right&quot; : &quot;left&quot;;
+  } catch (e) { align = null; }
+  return {
+    kind: &quot;text&quot;, shapeId: id, box: box, name: el.getTitle() || &quot;&quot;,
+    text: text.replace(/\u000b/g, &quot;\n&quot;),
+    font: { name: st.getFontFamily(), size: st.getFontSize(), bold: !!st.isBold(), italic: !!st.isItalic(), color: color, caps: false },
+    align: align
+  };
+}
+
+/* ---------- Insertion de l&#x27;image ---------- */
+function inkLabInsert(b64, rect, key, dataJson, deleteId) {
+  var pres = SlidesApp.getActivePresentation();
+  var page = pres.getSelection().getCurrentPage();
+  if (!page) throw new Error(&quot;Ouvre une diapo avant d&#x27;insérer l&#x27;image.&quot;);
+  var blob = Utilities.newBlob(Utilities.base64Decode(b64), &quot;image/png&quot;, &quot;inklab.png&quot;);
+  var img = page.insertImage(blob, rect.left, rect.top, rect.width, rect.height);
+  img.setTitle(&quot;Ink Lab&quot;);
+  img.setDescription(INKLAB_TAG + key);
+  if (deleteId) { try { var old = page.getPageElementById(deleteId); if (old) old.remove(); } catch (e) { /* déjà supprimée */ } }
+  try { PropertiesService.getDocumentProperties().setProperty(&quot;inklab:&quot; + key, dataJson); } catch (e) { /* réglages trop lourds : l&#x27;image reste */ }
+  img.select();
+  return { shapeId: img.getObjectId() };
+}
+</pre>
+    </div></div>
+    <div class="step"><div class="n">2</div><div>
+      <h2>Colle-le dans ta présentation</h2>
+      <p>Dans Google Slides, ouvre ta présentation puis <b>Extensions › Apps Script</b>. Remplace tout le contenu de <b>Code.gs</b> par le script, puis enregistre avec <kbd>Cmd</kbd> + <kbd>S</kbd>.</p>
+    </div></div>
+    <div class="step"><div class="n">3</div><div>
+      <h2>Recharge la présentation</h2>
+      <p>Le menu <b>Ink Lab › Ouvrir Ink Lab</b> apparaît à droite de « Aide ». Au premier lancement, Google demande d'autoriser le script :</p>
+      <ol class="sub">
+        <li>choisis ton compte ;</li>
+        <li>si Google affiche « application non validée », clique sur <b>Paramètres avancés</b>, puis sur <b>Accéder à Ink Lab</b> ;</li>
+        <li>clique sur <b>Autoriser</b>.</li>
+      </ol>
+    </div></div>
+    <div class="step"><div class="n">4</div><div>
+      <h2>Utilise-le</h2>
+      <p>Sélectionne une zone de texte, choisis un style, puis « Insérer dans la diapo ». Clique plus tard sur l'image Ink Lab pour retrouver son texte et ses réglages.</p>
+    </div></div>
+  </div>
+
+  <small>Le script ne fait que trois choses : lire la zone de texte sélectionnée, insérer l'image dans la diapo, et charger le volet depuis gvsxx.github.io. Il est lié à cette présentation : pour une autre présentation, refais l'étape 2, ou duplique celle-ci, le script suit la copie. La version navigateur est ici : <a href="app.html">Ink Lab web</a>.</small>
+</main>
+<script>
+  const btn = document.getElementById("copy"), hint = document.getElementById("hint"), cmd = document.getElementById("cmd");
+  btn.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(cmd.textContent); btn.textContent = "Copié"; btn.classList.add("done"); hint.textContent = "Colle-le dans Apps Script."; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents(cmd); const s = getSelection(); s.removeAllRanges(); s.addRange(r); hint.textContent = "Sélectionné : fais Cmd + C."; }
+    setTimeout(() => { btn.textContent = "Copier le script"; btn.classList.remove("done"); }, 2500);
+  });
+</script>
+</body>
+</html>

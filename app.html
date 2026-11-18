@@ -729,9 +729,147 @@ body.ppt #ctxBanner { margin: 8px 12px 0; }
 @media (prefers-reduced-transparency: reduce) { #fontPop, .fpSec { background-color: #1e1e22 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } }
 @media (prefers-reduced-motion: reduce) { #fontPop { transform: none !important; } }
 
+/* =====================================================================
+   INK LAB — mise en page B (test) : couleurs d'origine, ergonomie « éditeur vidéo »
+   ===================================================================== */
+body.uxb { background-color: #0B0B0D; }
+body.web.uxb #app { display: block; height: 100vh; height: 100dvh; padding: 14px max(14px, env(safe-area-inset-right, 0px)) 14px max(14px, env(safe-area-inset-left, 0px)); }
+body.uxb #pvWrap.stageCard { position: relative; height: 100%; padding: 0; border: 0; box-shadow: none; display: block; }
+body.uxb #pvBox { position: absolute; inset: 0; height: auto !important; border-radius: 34px; box-shadow: 0 0 0 1px rgba(255,255,255,0.07) inset; padding: 76px 40px 132px 86px; transition: padding-left var(--spring-t) var(--spring); }
+body.uxb #pvBox.sheetOpen { padding-left: 470px; }
+body.uxb #pvBox #pvImg { position: relative; z-index: 0; }
+
+/* ---- Barre du haut (posée sur la scène) ---- */
+.bTop { position: absolute; left: 18px; right: 18px; top: 16px; z-index: 6; display: flex; align-items: center; gap: 12px; pointer-events: none; }
+.bTop > * { pointer-events: auto; }
+.bBrand { display: flex; align-items: center; gap: 10px; flex: 1; }
+.bMark { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: var(--acc); color: #fff; }
+.bWord { font-weight: 800; font-size: 15px; letter-spacing: 0.08em; color: #fff; }
+.bWord b { color: var(--acc); }
+.bStylePill { display: flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; cursor: pointer; color: #fff; font-size: 13px; font-weight: 500;
+  background-color: rgba(28,28,32,0.7); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.14);
+  transition: transform 100ms ease-out; }
+.bStylePill:active { transform: scale(0.97); }
+.bStyleLbl { color: rgba(255,255,255,0.5); }
+.bChev { color: rgba(255,255,255,0.5); margin-top: -3px; }
+.bRight { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
+body.uxb .bGhost, body.uxb .bRight #btnZero { margin: 0; padding: 10px 14px; border-radius: 999px; font-size: 13px; font-weight: 500; color: #fff; border: 0;
+  background-color: rgba(28,28,32,0.7); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.14); }
+body.uxb .bExport { margin: 0; flex: none !important; padding: 11px 20px !important; border-radius: 999px !important; font-size: 14px !important; }
+
+/* ---- Rail d'outils ---- */
+.bRail { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); z-index: 6; display: flex; flex-direction: column; gap: 8px; max-height: calc(100% - 200px); }
+.bRailSep { height: 1px; margin: 2px 10px; background-color: rgba(255,255,255,0.12); }
+.bTool { position: relative; width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  color: rgba(255,255,255,0.85); font-weight: 700; font-size: 14px;
+  background-color: rgba(28,28,32,0.7); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.14);
+  transition: transform 100ms ease-out, background-color 160ms ease, color 160ms ease; -webkit-tap-highlight-color: transparent; }
+.bTool:hover { background-color: rgba(60,60,66,0.8); }
+.bTool:active { transform: scale(0.92); }
+.bTool.on { background-color: #fff; color: #111; }
+.bTool .bOn { position: absolute; right: 1px; top: 1px; width: 9px; height: 9px; border-radius: 50%; background-color: var(--acc); box-shadow: 0 0 0 2px #141416; opacity: 0; transform: scale(0.4); transition: opacity 160ms ease, transform var(--spring-b-t) var(--spring-b); }
+.bTool.active .bOn { opacity: 1; transform: none; }
+.bTip { position: absolute; left: 54px; top: 50%; transform: translate(-4px, -50%); padding: 5px 10px; border-radius: 8px; white-space: nowrap; pointer-events: none;
+  font-size: 12px; font-weight: 600; color: #fff; background-color: rgba(28,28,32,0.9); opacity: 0; transition: opacity 120ms ease, transform 200ms var(--spring); }
+@media (hover: hover) { .bTool:hover .bTip { opacity: 1; transform: translate(0, -50%); } }
+.bTool.on .bTip { display: none; }
+
+/* ---- Panneau flottant d'un outil ---- */
+.bSheet { position: absolute; left: 76px; top: 72px; bottom: 150px; z-index: 7; width: 360px; display: flex; flex-direction: column; border-radius: 26px; overflow: hidden;
+  background-color: rgba(22,22,26,0.88); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.14), 0 30px 60px -20px rgba(0,0,0,0.7);
+  opacity: 0; visibility: hidden; transform: scale(0.94) translateX(-8px);
+  transition: opacity 160ms ease, transform var(--spring-t) var(--spring), visibility 0s linear 160ms; }
+.bSheet.open { opacity: 1; visibility: visible; transform: none; transition: opacity 160ms ease, transform var(--spring-t) var(--spring), visibility 0s; }
+.bSheetHead { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px 20px; }
+#bSheetTitle { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: #fff; }
+.bClose { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; color: rgba(255,255,255,0.7); background-color: rgba(255,255,255,0.08); }
+.bClose:active { transform: scale(0.92); }
+.bSheetBody { flex: 1; overflow-y: auto; padding: 0 12px 14px; overscroll-behavior: contain; }
+.bSheetBody .sec { display: none; margin: 0 0 10px !important; background-color: rgba(255,255,255,0.04); }
+.bSheetBody .sec.bShow { display: block; }
+.bSheetBody .curStyle .secBody { padding-top: 14px; }
+.bSheetBody #tplFilter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.bSheetBody #tplFilter .fBtn { margin: 0; }
+
+/* ---- Bas de scène : bande de styles + effets actifs ---- */
+.bDock { position: absolute; left: 18px; right: 18px; bottom: 16px; z-index: 6; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.bDock > * { pointer-events: auto; }
+.bStrip { display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px;
+  background-color: rgba(28,28,32,0.72); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.14); }
+body.uxb #tplGrid { display: flex; flex: 1; min-width: 0; gap: 6px; margin: 0; padding: 0; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: none; mask-image: none; scroll-snap-type: x proximity; }
+body.uxb #tplGrid::-webkit-scrollbar { display: none; }
+body.uxb #tplGrid .tpl { flex: 0 0 auto; width: auto; height: 44px; margin: 0; padding: 0; display: flex; align-items: center; gap: 8px; border-radius: 999px; overflow: hidden;
+  background-color: #222226; box-shadow: none; scroll-snap-align: start; }
+body.uxb #tplGrid .tplThumb { width: 84px; height: 44px; flex-shrink: 0; border-radius: 999px; overflow: hidden; }
+body.uxb #tplGrid .tplImg, body.uxb #tplGrid .tplFallback { width: 84px; height: 44px; object-fit: cover; border-radius: 999px; }
+body.uxb #tplGrid .tplMeta { display: none; padding: 0 16px 0 2px; }
+body.uxb #tplGrid .tplName { font-size: 13px; font-weight: 600; white-space: nowrap; color: #fff; }
+body.uxb #tplGrid .tpl.on { background-color: var(--acc); padding: 4px; box-shadow: none; }
+body.uxb #tplGrid .tpl.on .tplThumb { width: 64px; height: 36px; }
+body.uxb #tplGrid .tpl.on .tplImg, body.uxb #tplGrid .tpl.on .tplFallback { width: 64px; height: 36px; }
+body.uxb #tplGrid .tpl.on .tplMeta { display: block; }
+.bPlus { width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; font-weight: 400; color: #111; background-color: #fff; transition: transform 100ms ease-out; }
+.bPlus:active { transform: scale(0.92); }
+body.uxb .bChips { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0; }
+body.uxb .bChips .chipsLbl { display: none; }
+body.uxb #fxChips { display: flex; flex-wrap: wrap; gap: 6px; }
+body.uxb #fxChips .chip { margin: 0; padding: 8px 14px; border-radius: 999px; border: 0; font-size: 12px; font-weight: 600; color: #fff; background-color: rgba(28,28,32,0.72);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.14); }
+body.uxb #fxChips .chip::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background-color: var(--acc); vertical-align: 1px; }
+body.uxb #fxChips .chipNone { color: rgba(255,255,255,0.5); font-size: 12px; }
+body.uxb .pvBar.bHud { position: absolute; left: auto; right: 18px; top: 76px; bottom: auto; transform: none; z-index: 6; margin: 0; display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 14px;
+  background-color: rgba(28,28,32,0.72); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.14); }
+body.uxb .pvBar.bHud .seg { margin: 0; }
+body.uxb .pvBar.bHud .btn { margin: 0; padding: 5px 10px; background: transparent; box-shadow: none; color: rgba(255,255,255,0.85); font-size: 12px; }
+body.uxb #pvSizeSeg { display: none !important; }
+body.uxb #pvBox > #status { top: 76px; }
+body.uxb #pvMs { top: auto; bottom: 128px; right: 22px; }
+body.uxb #pvHint { top: 72px; left: 76px; }
+body.uxb #pvBadge { top: 72px; left: 76px; }
+body.uxb #fontPop { z-index: 60; }
+
+/* ---- Petits écrans : rail en ligne, panneau en feuille du bas ---- */
+@media (max-width: 860px) {
+  body.web.uxb #app { padding: 8px; }
+  body.uxb #pvBox { border-radius: 26px; padding: 64px 12px 186px; }
+  body.uxb #pvBox.sheetOpen { padding-left: 12px; }
+  .bWord, .bStylePill { display: none; }
+  body.uxb .bRight #btnZero { display: flex; align-items: center; justify-content: center; padding: 0; width: 44px; height: 44px; font-size: 0; }
+  body.uxb .bRight #btnZero::before { content: "↺"; font-size: 20px; line-height: 1; }
+  body.uxb .bRight #btnZero.undo::before { content: "↶"; }
+  body.uxb .bRight { gap: 8px; }
+  .bRail { left: 10px; right: 10px; top: auto; bottom: 120px; transform: none; flex-direction: row; overflow-x: auto; max-height: none; scrollbar-width: none; padding: 2px; }
+  .bRail::-webkit-scrollbar { display: none; }
+  .bRailSep { width: 1px; height: auto; margin: 10px 2px; }
+  .bTip { display: none; }
+  .bSheet { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; height: 52%; transform: translateY(24px); border-radius: 26px; }
+  body.uxb #pvBox.sheetOpen .bDock { opacity: 0; pointer-events: none; }
+  .bRail { transition: bottom var(--spring-b-t, 380ms) var(--spring-b, ease); }
+  body.uxb #pvBox.sheetOpen #pvMs, body.uxb #pvBox.sheetOpen #pvHint { display: none; }
+  .bDock { transition: opacity 180ms ease; }
+  .bSheet.open { transform: none; }
+  body.uxb .pvBar.bHud { display: none; }
+  body.uxb #pvMs { display: none; }
+  body.uxb .bChips { display: none; }
+  .bDock { bottom: 12px; left: 10px; right: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .bSheet { transform: none !important; } }
+@media (prefers-reduced-transparency: reduce) {
+  .bStylePill, body.uxb .bGhost, body.uxb .bRight #btnZero, .bTool, .bSheet, .bStrip, body.uxb #fxChips .chip { background-color: #1C1C20 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
+
+/* icônes : boîte flex centrée (pas de ligne de base de texte) */
+.bTool .bIco { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; line-height: 1; }
+.bTool .bIco svg { display: block; flex-shrink: 0; }
+
+/* fenêtres basses (ex. aperçu intégré dans la landing) : le rail se resserre pour ne pas toucher la bande des styles */
+@media (min-width: 861px) and (max-height: 880px) { .bRail { gap: 5px; } .bRail .bTool { width: 38px; height: 38px; } .bRailSep { margin: 1px 8px; } }
+@media (min-width: 861px) and (max-height: 720px) { .bRail { gap: 3px; } .bRail .bTool { width: 32px; height: 32px; } .bTool .bIco svg { width: 16px; height: 16px; } }
+
 </style>
 </head>
-<body class="web">
+<body class="web uxb">
 <div id="app">
 
   <!-- En-tête -->
@@ -3761,25 +3899,44 @@ init().catch(e => { console.error(e); status("Erreur au démarrage : " + (e && e
 
 </script>
 <script>
-/* INK LAB — mise en page « app » : scène (aperçu + styles) et inspecteur à onglets.
-   Réorganise les éléments construits par le panneau commun sans toucher à leur logique
-   (tous les identifiants restent les mêmes). */
+/* INK LAB — mise en page « B » (test) : scène plein écran, outils ronds flottants,
+   panneau flottant par outil, styles en bande de pilules. Couleurs d'origine. */
 (function () {
-  const TABS = [["text", "Texte"], ["fx", "Effets"], ["out", HOST.outputTitle || "Export"]];
+  const TOOLS = [
+    { k: "text",    label: "Texte",        ico: "Aa", secs: ["text"] },
+    { k: "styles",  label: "Style actuel", ico: "★",  secs: ["cur"] },
+    { k: "colors",  label: "Couleurs",     ico: svgDot(), secs: ["colors"], tg: "onColors" },
+    { k: "ink",     label: "Encre",        ico: svgDrop(), secs: ["ink"], tg: "onInk" },
+    { k: "destroy", label: "Destruction",  ico: svgCrack(), secs: ["destroy"], tg: "onDestroy" },
+    { k: "blur",    label: "Flou",         ico: svgBlur(), secs: ["blur"], tg: "onBlur" },
+    { k: "glow",    label: "Glow",         ico: svgGlow(), secs: ["glow"], tg: "onGlow" },
+    { k: "geom",    label: "Perspective",  ico: svgGeom(), secs: ["geom"], tg: "onGeom" },
+    { k: "texture", label: "Texture",      ico: svgTex(), secs: ["texture", "grain"], tg: ["onTex", "onGrain"] },
+    { k: "adjust",  label: "Lumière",      ico: svgSun(), secs: ["adjust"], tg: "onAdjust" },
+    { k: "bg",      label: "Fond",         ico: svgBg(), secs: ["bg"], tg: "addBg" },
+    { k: "out",     label: HOST.outputTitle || "Export", ico: svgOut(), secs: ["output"] }
+  ];
+  function svgDot() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M9 2A7 7 0 0 1 9 16Z" fill="currentColor"/></svg>'; }
+  function svgDrop() { return '<svg width="14" height="18" viewBox="0 0 44 56" fill="none"><path d="M22 3C22 3 5 24 5 36C5 46 13 53 22 53C31 53 39 46 39 36C39 24 22 3 22 3Z" fill="currentColor"/></svg>'; }
+  function svgCrack() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 3L8 8L6 11L11 15M8 8L14 5M11 11L15 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+  function svgBlur() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3" fill="currentColor"/><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.4" opacity=".55"/><circle cx="9" cy="9" r="8.2" stroke="currentColor" stroke-width="1" opacity=".25"/></svg>'; }
+  function svgGlow() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1.5V4M9 14V16.5M1.5 9H4M14 9H16.5M3.7 3.7L5.4 5.4M12.6 12.6L14.3 14.3M3.7 14.3L5.4 12.6M12.6 5.4L14.3 3.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="9" r="3" fill="currentColor"/></svg>'; }
+  function svgGeom() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 13C5 6 13 6 16 13M2 13H16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'; }
+  function svgTex() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="4" cy="4" r="1.3" fill="currentColor"/><circle cx="10" cy="3" r="1" fill="currentColor"/><circle cx="14" cy="6" r="1.4" fill="currentColor"/><circle cx="6" cy="9" r="1.1" fill="currentColor"/><circle cx="12" cy="11" r="1.2" fill="currentColor"/><circle cx="4" cy="14" r="1.4" fill="currentColor"/><circle cx="9" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/></svg>'; }
+  function svgSun() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M9 4V14" stroke="currentColor" stroke-width="1.6"/><path d="M9 2A7 7 0 0 0 9 16Z" fill="currentColor"/></svg>'; }
+  function svgBg() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="12" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M2 12L6 8L10 12L12 10L16 14" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>'; }
+  function svgOut() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2V11M5 7L9 11L13 7M3 15H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
   function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 
   function build() {
     if (document.body.classList.contains("laid")) return;
-    const pvWrap = $("pvWrap"), pvBox = $("pvBox"), scroll = $("scroll");
-    const secTpl = $("sec-templates"), sections = $("sections");
+    document.body.classList.add("uxb");
+    const app = $("app"), pvWrap = $("pvWrap"), pvBox = $("pvBox"), scroll = $("scroll"), bottom = $("bottom");
+    const secTpl = $("sec-templates");
 
-    /* ---- Scène : capsule flottante sur l'aperçu ---- */
-    const bar = pvWrap.querySelector(".pvBar");
-    bar.classList.add("hud"); pvBox.appendChild(bar);
-    if (document.body.classList.contains("ppt") || window.innerWidth <= 520) bar.querySelectorAll(".btn").forEach(b => { if (/Varier/.test(b.textContent)) { b.title = "Varier"; b.textContent = "⟳"; } });
-    // statut : petit message flottant (HUD) en haut de la scène
+    /* ---- Carte scène : tout se passe dans l'aperçu ---- */
+    pvWrap.classList.add("stageCard");
     const st = $("status"); pvBox.appendChild(st);
-    // status() réécrit className : l'affichage passe par data-show (non observé, donc pas de boucle)
     let tTimer = null;
     new MutationObserver(() => {
       if (!st.textContent.trim()) return;
@@ -3787,108 +3944,139 @@ init().catch(e => { console.error(e); status("Erreur au démarrage : " + (e && e
       if (st.classList.contains("busy")) return;
       tTimer = setTimeout(() => { delete st.dataset.show; }, st.classList.contains("err") ? 6000 : 2600);
     }).observe(st, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ["class"] });
-    st.addEventListener("click", () => { delete st.dataset.show; });
 
-    /* ---- Styles : bande horizontale sous l'aperçu ---- */
-    const strip = el("div", "styles");
-    const head = el("div", "stylesHead", `<span class="stylesTitle">Styles</span>`);
-    head.appendChild($("tplFilter"));
-    strip.appendChild(head);
-    strip.appendChild($("tplGrid"));
-    const chips = pvWrap.querySelector(".chipsRow");
-    pvWrap.appendChild(strip);   // (déplacée dans le défilement pour le volet PowerPoint, plus bas)
-    // flèches de défilement (pointeur précis) : défilement doux d'une page
-    const grid = $("tplGrid");
-    ["prev", "next"].forEach(d => {
-      const b = el("div", "stripNav " + d, d === "prev" ? "‹" : "›");
-      b.title = d === "prev" ? "Styles précédents" : "Styles suivants";
-      b.addEventListener("click", () => grid.scrollBy({ left: (d === "prev" ? -1 : 1) * grid.clientWidth * 0.8, behavior: "smooth" }));
-      strip.appendChild(b);
+    // barre du haut, posée sur la scène
+    const top = el("div", "bTop");
+    const brand = el("div", "bBrand", `<span class="bMark">${svgDrop()}</span><span class="bWord">INK<b>LAB</b></span>`);
+    const pill = el("div", "bStylePill", `<span class="bStyleLbl">Style</span><span id="bStyleName"></span><span class="bChev">⌄</span>`);
+    const right = el("div", "bRight");
+    const zero = $("btnZero"); zero.classList.add("bGhost"); zero.textContent = "Réinitialiser"; zero.title = "Tout réinitialiser (typo comprise)"; zero.setAttribute("aria-label", "Tout réinitialiser");
+    const apply = $("btnApply"); apply.classList.add("bExport");
+    right.appendChild(zero); right.appendChild(apply);
+    top.appendChild(brand); top.appendChild(pill); top.appendChild(right);
+    pvWrap.insertBefore(top, pvWrap.firstChild);
+    $("top").style.display = "none";
+    bottom.style.display = "none";
+
+    // rail d'outils ronds
+    const rail = el("div", "bRail");
+    TOOLS.forEach((t, i) => {
+      if (i === 2) rail.appendChild(el("div", "bRailSep"));
+      if (t.k === "out") rail.appendChild(el("div", "bRailSep"));
+      const b = el("div", "bTool", `<span class="bIco">${t.ico}</span><span class="bTip">${t.label}</span><i class="bOn"></i>`);
+      b.id = "tool-" + t.k; b.tabIndex = 0; b.setAttribute("role", "button"); b.setAttribute("aria-label", t.label);
+      b.addEventListener("pointerdown", e => { if (e.button === 0) toggleTool(t.k); });
+      b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleTool(t.k); } });
+      rail.appendChild(b);
     });
+    pvBox.appendChild(rail);
 
-    /* ---- Inspecteur à onglets ---- */
-    const tabs = el("div", "tabs");
-    const seg = el("div", "seg tabSeg", TABS.map(([k, l]) => `<div class="segBtn" id="tab-${k}" role="tab">${l}</div>`).join(""));
-    tabs.appendChild(seg);
-    scroll.insertBefore(tabs, scroll.firstChild);
-    if (document.body.classList.contains("ppt")) { strip.classList.add("inScroll"); scroll.insertBefore(strip, tabs); }
-    const pText = el("div", "panel"), pFx = el("div", "panel"), pOut = el("div", "panel");
-    pText.id = "panel-text"; pFx.id = "panel-fx"; pOut.id = "panel-out";
-    const endSpace = scroll.querySelector(".endSpace");
-    [pText, pFx, pOut].forEach(p => scroll.insertBefore(p, endSpace));   // dans le document d'abord : les $() suivants les trouvent
-    pText.appendChild($("textSlot"));
-
-    // style courant : nom, enregistrer, nouveau…
-    const cur = el("div", "sec curStyle"); pFx.appendChild(cur);
-    cur.innerHTML = `<div class="secHead static"><span class="secTitle">Style actuel</span><span class="secSub" id="curSub"></span></div><div class="secBody"></div>`;
+    // panneau flottant
+    const sheet = el("div", "bSheet"); sheet.id = "bSheet";
+    sheet.innerHTML = `<div class="bSheetHead"><span id="bSheetTitle"></span><div class="bClose" id="bClose" title="Fermer (Échap)">✕</div></div><div class="bSheetBody" id="bSheetBody"></div>`;
+    pvBox.appendChild(sheet);
+    const body = $("bSheetBody");
+    body.appendChild($("textSlot"));
+    // carte « Style actuel » : nom, enregistrer, nouveau, et le reste
+    const cur = el("div", "sec curStyle"); cur.id = "sec-cur";
+    cur.innerHTML = `<div class="secBody"></div>`;
     const tplEdit = secTpl.querySelector(".tplEdit");
+    cur.querySelector(".secBody").appendChild($("tplFilter"));
     cur.querySelector(".secBody").appendChild(tplEdit);
     const revert = $("btnResetAll"); revert.classList.add("mini"); revert.textContent = "↺ Revenir au style";
-    // l'essentiel d'abord (nom + Enregistrer + Nouveau), le reste un niveau plus bas
-    const rows = tplEdit.querySelectorAll(".btnRow");
-    const top = tplEdit.querySelector(".rowTop"); if (top) top.hidden = true;
-    const line = el("div", "nameLine"); tplEdit.insertBefore(line, $("tplName"));
-    line.appendChild($("tplName")); line.appendChild($("tplSave"));
-    $("tplName").placeholder = "Nom du style";
-    $("tplSave").textContent = "Enregistrer";
-    const main = rows[0], more = rows[1];
-    const bNew = $("tplNew"), bDup = $("tplDup"), bDel = $("tplDel");
-    main.innerHTML = ""; main.appendChild(bNew); main.appendChild(revert);
-    const moreBtn = el("div", "btn mini ghost moreBtn", "Plus…"); moreBtn.tabIndex = 0; main.appendChild(moreBtn);
-    [bDel, bDup].forEach(b => more.insertBefore(b, more.firstChild));
-    more.classList.add("moreRow"); more.hidden = true;
-    moreBtn.addEventListener("click", () => { more.hidden = !more.hidden; moreBtn.textContent = more.hidden ? "Plus…" : "Moins"; });
-    if (chips) { chips.classList.add("inPanel"); pFx.appendChild(chips); }
-    pFx.appendChild(scroll.querySelector(".foldBar"));
-    pFx.appendChild(sections);
-    const out = $("sec-output");
-    if (out) { out.classList.add("static"); out.classList.remove("closed"); S.collapsed.output = false; pOut.appendChild(out); }
-    secTpl.remove();
+    tplEdit.querySelector(".btnRow:last-child").appendChild(revert);
+    body.appendChild(cur);
+    body.appendChild($("sections"));
+    const out = $("sec-output"); if (out) { out.classList.remove("closed"); S.collapsed.output = false; }
+    $("bClose").addEventListener("click", () => toggleTool(null));
 
-    function show(k, user) {
-      S.ui.tab = k;
-      TABS.forEach(([t]) => {
-        $("tab-" + t).className = "segBtn" + (t === k ? " on" : "");
-        $("panel-" + t).hidden = t !== k;
+    // bas de scène : bande de styles + réglages rapides (effets actifs)
+    const dock = el("div", "bDock");
+    const strip = el("div", "bStrip");
+    strip.appendChild($("tplGrid"));
+    const plus = el("div", "bPlus", "+"); plus.title = "Nouveau style avec les réglages actuels";
+    plus.addEventListener("click", () => $("tplNew").click());
+    strip.appendChild(plus);
+    const chips = pvWrap.querySelector(".chipsRow");
+    dock.appendChild(strip);
+    if (chips) { chips.classList.add("bChips"); dock.appendChild(chips); }
+    pvBox.appendChild(dock);
+    const hud = pvWrap.querySelector(".pvBar"); if (hud) { hud.classList.add("bHud"); pvBox.appendChild(hud); }
+    secTpl.remove(); scroll.style.display = "none";
+
+    /* ---- Ouverture des outils ---- */
+    let curTool = null;
+    function toggleTool(k) {
+      curTool = (k && curTool !== k) ? k : null;
+      S.ui.tool = curTool; saveState();
+      document.querySelectorAll(".bTool").forEach(b => b.classList.toggle("on", b.id === "tool-" + curTool));
+      sheet.classList.toggle("open", !!curTool);
+      pvBox.classList.toggle("sheetOpen", !!curTool);
+      fitNarrow();
+      clearTimeout(toggleTool._t); toggleTool._t = setTimeout(() => scheduleRender(true), 380);   // l'aperçu se recentre dans la place libre
+      if (!curTool) return;
+      const t = TOOLS.find(x => x.k === curTool);
+      $("bSheetTitle").textContent = t.label;
+      body.querySelectorAll(".sec").forEach(s => {
+        const id = s.id.replace(/^sec-/, "");
+        const show = t.secs.indexOf(id) >= 0;
+        s.classList.toggle("bShow", show);
+        if (show && s.classList.contains("closed")) { if (PR.SCHEMA.some(x => x.id === id)) toggleSection(id); else { s.classList.remove("closed"); S.collapsed[id] = false; } }
       });
+      $("sections").style.display = t.secs.some(id => PR.SCHEMA.some(x => x.id === id)) ? "" : "none";
+      // le panneau naît du bouton (origine verticale)
+      const b = $("tool-" + curTool), r = b.getBoundingClientRect(), pr = pvBox.getBoundingClientRect();
+      sheet.style.transformOrigin = "0 " + Math.max(0, r.top + r.height / 2 - pr.top - sheet.offsetTop) + "px";
+      body.scrollTop = 0;
       if (window.InkFluid) requestAnimationFrame(() => { InkFluid.refresh(); InkFluid.fillAll(); });
-      if (user) { scroll.scrollTop = 0; saveState(); }
     }
-    TABS.forEach(([k]) => $("tab-" + k).addEventListener("pointerdown", e => { if (e.button === 0) show(k, true); }));
-    TABS.forEach(([k]) => $("tab-" + k).addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") show(k, true); }));
-    TABS.forEach(([k]) => $("tab-" + k).tabIndex = 0);
-    show(S.ui.tab && TABS.some(t => t[0] === S.ui.tab) ? S.ui.tab : "fx");
-
-    // « Tout ouvrir / Tout replier / Actives » : sections d'effets uniquement
-    window.setAllCollapsed = function (mode) {
-      PR.SCHEMA.forEach(sec => {
-        if (sec.id === "output") return;
-        const want = mode === "all" ? true : mode === "none" ? false : !(sec.toggle ? S.params[sec.toggle] : false);
-        if (!!S.collapsed[sec.id] !== want) toggleSection(sec.id);
-      });
+    // écran étroit : le panneau monte du bas, l'aperçu se loge dans la place restante au-dessus
+    function fitNarrow() {
+      const narrow = window.innerWidth <= 860;
+      if (narrow && sheet.classList.contains("open")) {
+        const h = Math.round(pvBox.clientHeight * 0.52);
+        sheet.style.height = h + "px";
+        rail.style.bottom = (h + 18) + "px";                 // le rail reste au-dessus du panneau : on change d'outil sans fermer
+        pvBox.style.paddingBottom = (h + 18 + 48 + 14) + "px";
+      } else { sheet.style.height = ""; rail.style.bottom = ""; pvBox.style.paddingBottom = ""; }
+    }
+    window.addEventListener("resize", () => { fitNarrow(); });
+    window.openSection = function (id) {
+      const t = TOOLS.find(x => x.secs.indexOf(id) >= 0); if (t) { curTool = null; toggleTool(t.k); }
     };
-    // cliquer une puce d'effet ouvre l'onglet Effets sur la bonne section
-    const origOpen = window.openSection;
-    window.openSection = function (id) { if (S.ui.tab !== "fx") show("fx", true); return origOpen.apply(this, arguments); };
+    pill.addEventListener("click", () => toggleTool("styles"));
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && curTool) toggleTool(null); });
 
-    // sous-titre du style courant
-    const sub = () => { const t = currentTpl(); $("curSub").textContent = t ? t.name + (isDirty() ? " · modifié" : "") : "réglages perso"; };
+    /* ---- Pastilles d'état sur les outils + nom du style ---- */
+    function refresh() {
+      TOOLS.forEach(t => {
+        if (!t.tg) return;
+        const on = [].concat(t.tg).some(k => S.params[k]);
+        const b = $("tool-" + t.k); if (b) b.classList.toggle("active", on);
+      });
+      const tp = currentTpl();
+      $("bStyleName").textContent = tp ? tp.name + (isDirty() ? " · modifié" : "") : "Réglages perso";
+    }
+    const origChips = window.renderChips;
+    window.renderChips = function () { const r = origChips.apply(this, arguments); refresh(); return r; };
     const origDirty = window.updateDirty;
-    window.updateDirty = function () { const r = origDirty.apply(this, arguments); sub(); return r; };
-    sub();
+    window.updateDirty = function () { const r = origDirty.apply(this, arguments); refresh(); return r; };
+    refresh();
 
-    // le style choisi reste visible dans la bande
-    const origGrid = window.renderTemplateGrid;
-    // défile seulement la bande (scrollIntoView ferait aussi défiler une page parente, ex. la landing)
+    // le style choisi reste visible dans la bande (sans faire défiler la page)
+    const grid = $("tplGrid");
     const reveal = () => {
       const on = grid.querySelector(".tpl.on"); if (!on) return;
       const l = on.offsetLeft - grid.offsetLeft, r = l + on.offsetWidth;
-      if (l < grid.scrollLeft || r > grid.scrollLeft + grid.clientWidth) grid.scrollTo({ left: Math.max(0, l - 12), behavior: "smooth" });
+      if (l < grid.scrollLeft || r > grid.scrollLeft + grid.clientWidth) grid.scrollTo({ left: Math.max(0, l - 40), behavior: "smooth" });
     };
+    const origGrid = window.renderTemplateGrid;
     window.renderTemplateGrid = function () { const r = origGrid.apply(this, arguments); requestAnimationFrame(reveal); return r; };
     setTimeout(reveal, 300);
 
+    window.setAllCollapsed = function () { /* sans objet dans cette mise en page */ };
     document.body.classList.add("laid");
+    if (S.ui.tool) { const k = S.ui.tool; curTool = null; setTimeout(() => toggleTool(k), 60); }
   }
   window.InkLayout = build;
   if (window.__inkBuilt) build();
