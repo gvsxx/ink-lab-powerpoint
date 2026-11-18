@@ -840,7 +840,10 @@ body.uxb #fontPop { z-index: 60; }
   .bRail::-webkit-scrollbar { display: none; }
   .bRailSep { width: 1px; height: auto; margin: 10px 2px; }
   .bTip { display: none; }
-  .bSheet { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; height: 62%; transform: translateY(24px); border-radius: 26px; }
+  .bSheet { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; height: 52%; transform: translateY(24px); border-radius: 26px; }
+  body.uxb #pvBox.sheetOpen .bRail, body.uxb #pvBox.sheetOpen .bDock { opacity: 0; pointer-events: none; }
+  body.uxb #pvBox.sheetOpen #pvMs, body.uxb #pvBox.sheetOpen #pvHint { display: none; }
+  .bRail, .bDock { transition: opacity 180ms ease; }
   .bSheet.open { transform: none; }
   body.uxb .pvBar.bHud { display: none; }
   body.uxb #pvMs { display: none; }
@@ -3977,6 +3980,7 @@ init().catch(e => { console.error(e); status("Erreur au démarrage : " + (e && e
       document.querySelectorAll(".bTool").forEach(b => b.classList.toggle("on", b.id === "tool-" + curTool));
       sheet.classList.toggle("open", !!curTool);
       pvBox.classList.toggle("sheetOpen", !!curTool);
+      fitNarrow();
       clearTimeout(toggleTool._t); toggleTool._t = setTimeout(() => scheduleRender(true), 380);   // l'aperçu se recentre dans la place libre
       if (!curTool) return;
       const t = TOOLS.find(x => x.k === curTool);
@@ -3994,6 +3998,16 @@ init().catch(e => { console.error(e); status("Erreur au démarrage : " + (e && e
       body.scrollTop = 0;
       if (window.InkFluid) requestAnimationFrame(() => { InkFluid.refresh(); InkFluid.fillAll(); });
     }
+    // écran étroit : le panneau monte du bas, l'aperçu se loge dans la place restante au-dessus
+    function fitNarrow() {
+      const narrow = window.innerWidth <= 860;
+      if (narrow && sheet.classList.contains("open")) {
+        const h = Math.round(pvBox.clientHeight * 0.52);
+        sheet.style.height = h + "px";
+        pvBox.style.paddingBottom = (h + 20) + "px";
+      } else { sheet.style.height = ""; pvBox.style.paddingBottom = ""; }
+    }
+    window.addEventListener("resize", () => { fitNarrow(); });
     window.openSection = function (id) {
       const t = TOOLS.find(x => x.secs.indexOf(id) >= 0); if (t) { curTool = null; toggleTool(t.k); }
     };
