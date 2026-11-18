@@ -731,6 +731,16 @@ body.ppt #ctxBanner { margin: 8px 12px 0; }
 </style>
 </head>
 <body class="ppt gslides">
+<script>
+/* Google Slides affiche la page dans son propre cadre et retire la classe du body et la balise <base> :
+   on remet la classe, et les fichiers relatifs (textures, image d'exemple) sont lus sur le site. */
+(function () {
+  document.body.classList.add("ppt", "gslides");
+  var BASE = "https://gvsxx.github.io/ink-lab-powerpoint/";
+  var f = window.fetch.bind(window);
+  window.fetch = function (u, o) { if (typeof u === "string" && !/^(https?:|data:|blob:)/.test(u)) u = BASE + u.replace(/^\.?\//, ""); return f(u, o); };
+})();
+</script>
 <div id="app">
 
   <!-- En-tête -->
